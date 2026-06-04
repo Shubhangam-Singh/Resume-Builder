@@ -1,0 +1,40 @@
+"use client";
+
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { BasicsSection } from "./sections/BasicsSection";
+import { CertificatesSection } from "./sections/CertificatesSection";
+import { EducationSection } from "./sections/EducationSection";
+import { ProjectsSection } from "./sections/ProjectsSection";
+import { SkillsSection } from "./sections/SkillsSection";
+import { WorkSection } from "./sections/WorkSection";
+
+const TABS = [
+  { value: "basics", label: "Basics", Component: BasicsSection },
+  { value: "work", label: "Experience", Component: WorkSection },
+  { value: "education", label: "Education", Component: EducationSection },
+  { value: "skills", label: "Skills", Component: SkillsSection },
+  { value: "projects", label: "Projects", Component: ProjectsSection },
+  { value: "certificates", label: "Certs", Component: CertificatesSection },
+] as const;
+
+export function Editor() {
+  return (
+    <Tabs defaultValue="basics" className="flex h-full flex-col">
+      <TabsList className="grid h-auto w-full grid-cols-3 gap-1 sm:grid-cols-6">
+        {TABS.map((t) => (
+          <TabsTrigger key={t.value} value={t.value} className="text-xs">
+            {t.label}
+          </TabsTrigger>
+        ))}
+      </TabsList>
+
+      <div className="scrollbar-thin mt-4 flex-1 overflow-y-auto pr-1">
+        {TABS.map(({ value, Component }) => (
+          <TabsContent key={value} value={value} className="mt-0">
+            <Component />
+          </TabsContent>
+        ))}
+      </div>
+    </Tabs>
+  );
+}
