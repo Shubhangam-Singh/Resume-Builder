@@ -42,8 +42,14 @@ const styles = StyleSheet.create({
 
   // Header
   header: { marginBottom: 12, textAlign: "center" },
-  name: { fontSize: 20, fontFamily: "Helvetica-Bold", letterSpacing: 0.5 },
-  label: { fontSize: 11, color: COLORS.muted, marginTop: 2 },
+  name: {
+    fontSize: 20,
+    fontFamily: "Helvetica-Bold",
+    letterSpacing: 0.5,
+    lineHeight: 1.2,
+    marginBottom: 3,
+  },
+  label: { fontSize: 11, color: COLORS.muted, marginTop: 1, lineHeight: 1.2 },
   contact: {
     fontSize: 9,
     color: COLORS.muted,

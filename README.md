@@ -23,7 +23,7 @@ ResumeForge does the opposite:
   cost means no reason to charge you.
 - **ATS-friendliness is a first-class feature**, not an afterthought.
 
-## What works today (Phase 1 — MVP)
+## What works today
 
 - ✅ Multi-section editor: Basics, Experience, Education, Skills, Projects,
   Certificates.
@@ -33,11 +33,37 @@ ResumeForge does the opposite:
 - ✅ One **ATS Classic** template — single column, standard headings, real
   selectable text, no tables or images.
 - ✅ One-click **Download PDF** with real, selectable, machine-readable text.
+- ✅ **Import an existing résumé** (PDF / DOCX / TXT). The file is read in your
+  browser, parsed into structured fields, and shown in a "Review what we
+  imported" step before anything is applied — nothing is committed silently.
 - ✅ Sample content on first load, plus "Start blank" to clear everything.
 
-> Coming next (see [Roadmap](#roadmap)): import an existing PDF/DOCX résumé,
-> more templates, an ATS checker, job-description keyword matching, autosave,
-> and JSON import/export.
+> Coming next (see [Roadmap](#roadmap)): more templates, an ATS checker,
+> job-description keyword matching, autosave, and JSON import/export.
+
+## Importing a résumé (Phase 2)
+
+Click **Import** and drop in a `.pdf`, `.docx`, or `.txt` file. The whole
+pipeline runs locally:
+
+1. **Text extraction** — PDFs are read with [pdf.js](https://mozilla.github.io/pdf.js/)
+   (its worker is served from your own origin, never a CDN), reconstructing real
+   line breaks from glyph positions; DOCX is read with
+   [mammoth](https://github.com/mwilliamson/mammoth.js). Newlines are preserved
+   because the parser's section/entry logic depends on them.
+2. **Parsing** — a TypeScript port of a battle-tested field extractor handles
+   text normalization, section detection (including slang headers like `SKILLZ`
+   / `EXP.`), and multi-strategy email/phone extraction. On top of that, it adds
+   **structured per-entry parsing**: each job, degree, project and certificate
+   becomes its own editable entry with dates normalized to `YYYY-MM`.
+3. **Review** — you see exactly what was found and confirm before it replaces
+   your current content. Every field stays fully editable afterwards.
+
+Parsing is **best-effort**: a failure in any one step degrades to an empty field
+rather than aborting the import, and **every skill you wrote is preserved** (the
+built-in taxonomy only normalizes casing/spelling — it never drops a skill it
+doesn't recognize). The parser is covered by
+[fixture tests](src/lib/parser/parser.test.ts) (`npm test`).
 
 ## Privacy
 
@@ -86,10 +112,14 @@ instance with no ongoing cost.
 | Styling       | Tailwind CSS + shadcn/ui (owned components)       |
 | State         | Zustand — one store is the source of truth        |
 | PDF + preview | `@react-pdf/renderer` (same doc on screen & file) |
+| PDF import    | `pdfjs-dist` (worker self-hosted, no CDN)         |
+| DOCX import   | `mammoth`                                         |
+| Tests         | Vitest (fixture-based parser tests)               |
 | Icons         | lucide-react                                      |
 
-The heavy PDF renderer is lazy-loaded / code-split so the initial page stays
-fast.
+The heavy PDF renderer, pdf.js, and mammoth are all lazy-loaded / code-split, so
+the initial page stays fast (~133 kB first load) and import code is only fetched
+when you actually import.
 
 ### Data model
 
@@ -106,17 +136,23 @@ src/
   app/                     Next.js app router (layout, page, global styles)
   components/
     editor/                The form: Workspace, Editor tabs, section editors
+    import/                Import dropzone + "Review what we imported" dialog
     pdf/                   PDF document, templates, live viewer, download
-    ui/                    shadcn/ui primitives (button, input, tabs, …)
+    ui/                    shadcn/ui primitives (button, input, dialog, …)
   lib/
     resume/                Canonical types, factories, formatting helpers
+    parser/                Résumé text parser (normalize, sections, name,
+                           contact, skills, dates, structured entries) + tests
+    import/                Client-side file → text extractors (pdf, docx)
     store.ts               Zustand store (source of truth)
+scripts/
+  copy-pdf-worker.mjs      Copies the pdf.js worker into public/ (predev/prebuild)
 ```
 
 ## Roadmap
 
 - **Phase 1 — MVP** ✅ manual entry → live preview → ATS PDF export _(done)_
-- **Phase 2** — import an existing PDF/DOCX résumé and pre-fill the form
+- **Phase 2 — Import** ✅ PDF/DOCX/TXT → parse → review → pre-filled form _(done)_
 - **Phase 3** — template gallery (Modern, Compact, Designer) + instant switching
 - **Phase 4** — ATS checker + job-description keyword matching
 - **Phase 5** — autosave, multiple saved resumes, JSON import/export,

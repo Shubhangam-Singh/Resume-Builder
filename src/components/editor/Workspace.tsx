@@ -5,6 +5,7 @@ import { FileText, RotateCcw, ShieldCheck, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { DownloadButton } from "@/components/pdf/DownloadButton";
 import { LivePreview } from "@/components/pdf/LivePreview";
+import { ImportResume } from "@/components/import/ImportResume";
 import { useResumeStore } from "@/lib/store";
 import { Editor } from "./Editor";
 
@@ -52,6 +53,7 @@ export function Workspace() {
             <ShieldCheck className="h-3.5 w-3.5" />
             Runs entirely in your browser
           </span>
+          <ImportResume />
           <Button variant="ghost" size="sm" onClick={handleLoadSample}>
             <Sparkles />
             <span className="hidden sm:inline">Sample</span>
