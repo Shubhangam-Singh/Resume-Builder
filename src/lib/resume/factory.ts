@@ -84,7 +84,11 @@ export function emptyResume(): ResumeData {
     projects: [],
     skills: [],
     certificates: [],
-    meta: { template: "ats-classic", lastModified: new Date().toISOString() },
+    meta: {
+      template: "ats-classic",
+      lastModified: new Date().toISOString(),
+      hiddenSections: [],
+    },
   };
 }
 
@@ -200,6 +204,10 @@ export function sampleResume(): ResumeData {
         url: "",
       },
     ],
-    meta: { template: "ats-classic", lastModified: new Date().toISOString() },
+    meta: {
+      template: "ats-classic",
+      lastModified: new Date().toISOString(),
+      hiddenSections: [],
+    },
   };
 }

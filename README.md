@@ -43,6 +43,11 @@ ResumeForge does the opposite:
   description to get a **keyword-coverage score** with matched/missing terms,
   and flags for common issues (missing email/phone, multi-column template,
   over-long lines, text-as-image).
+- ✅ **Autosave** to IndexedDB — your work is restored automatically on reload,
+  entirely on-device.
+- ✅ **Export / import as JSON** (JSON Resume-friendly), **toggle section
+  visibility**, **reorder entries**, and a **dark mode** for the app UI (the
+  exported résumé always stays print-light).
 - ✅ Sample content on first load, plus "Start blank" to clear everything.
 
 > Coming next (see [Roadmap](#roadmap)): more templates, an ATS checker,
@@ -78,7 +83,9 @@ ResumeForge has **no backend**. Everything — every keystroke, the live preview
 and the final PDF — is computed locally in your browser. Nothing you type is
 sent over the network. You can verify this yourself: open your browser's
 network tab while editing and downloading; you'll see no requests carrying your
-resume data. You can even run it fully offline after the first load.
+resume data. You can even run it fully offline after the first load. Autosave
+keeps your résumé in your browser's own IndexedDB storage — on your device, never
+uploaded.
 
 ## Run it locally
 
@@ -121,7 +128,8 @@ instance with no ongoing cost.
 | PDF + preview | `@react-pdf/renderer` (same doc on screen & file) |
 | PDF import    | `pdfjs-dist` (worker self-hosted, no CDN)         |
 | DOCX import   | `mammoth`                                         |
-| Tests         | Vitest (fixture-based parser tests)               |
+| Autosave      | IndexedDB via `idb` (local-only)                  |
+| Tests         | Vitest (parser, ATS, JSON round-trip)             |
 | Icons         | lucide-react                                      |
 
 The heavy PDF renderer, pdf.js, and mammoth are all lazy-loaded / code-split, so
@@ -164,8 +172,10 @@ scripts/
 - **Phase 2 — Import** ✅ PDF/DOCX/TXT → parse → review → pre-filled form _(done)_
 - **Phase 3 — Templates** ✅ ATS Classic / Modern / Compact / Designer + instant switching _(done)_
 - **Phase 4 — ATS checker** ✅ self-check round-trip + JD keyword coverage + issue flags _(done)_
-- **Phase 5** — autosave, multiple saved resumes, JSON import/export,
-  drag-to-reorder, dark mode, accessibility polish
+- **Phase 5 — Polish & portability** ✅ autosave (IndexedDB), JSON import/export,
+  section visibility, entry reordering, dark-mode app UI, a11y/responsive _(done)_
+  - _Still open from this phase: multiple saved résumés (versions) and
+    whole-section drag-reordering._
 
 ## License
 

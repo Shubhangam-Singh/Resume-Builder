@@ -79,9 +79,20 @@ export interface CertificateEntry {
   url: string;
 }
 
+/** Sections that can be toggled off (Basics is always shown). */
+export type HideableSection =
+  | "summary"
+  | "work"
+  | "education"
+  | "skills"
+  | "projects"
+  | "certificates";
+
 export interface ResumeMeta {
   template: string;
   lastModified: string;
+  /** Sections hidden from the rendered PDF. Absent = nothing hidden. */
+  hiddenSections?: HideableSection[];
 }
 
 export interface ResumeData {

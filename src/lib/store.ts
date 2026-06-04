@@ -15,6 +15,7 @@ import type {
   Basics,
   CertificateEntry,
   EducationEntry,
+  HideableSection,
   Location,
   Profile,
   ProjectEntry,
@@ -64,6 +65,7 @@ interface ResumeStore {
 
   // meta
   setTemplate: (template: string) => void;
+  toggleSection: (section: HideableSection) => void;
 
   // whole-document
   setResume: (resume: ResumeData) => void;
@@ -141,6 +143,14 @@ export const useResumeStore = create<ResumeStore>((set) => {
     setTemplate: (template) =>
       mutate((r) => {
         r.meta.template = template;
+      }),
+
+    toggleSection: (section) =>
+      mutate((r) => {
+        const hidden = new Set(r.meta.hiddenSections ?? []);
+        if (hidden.has(section)) hidden.delete(section);
+        else hidden.add(section);
+        r.meta.hiddenSections = [...hidden];
       }),
 
     setResume: (resume) =>

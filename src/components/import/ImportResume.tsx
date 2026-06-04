@@ -83,7 +83,7 @@ export function ImportResume() {
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>
-        <Button variant="outline" size="sm">
+        <Button variant="outline" size="sm" aria-label="Import résumé">
           <Upload />
           <span className="hidden sm:inline">Import</span>
         </Button>

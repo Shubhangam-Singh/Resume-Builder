@@ -54,7 +54,7 @@ export function AtsChecker() {
   const [jd, setJd] = useState("");
   const [coverage, setCoverage] = useState<CoverageResult | null>(null);
 
-  async function runSelfCheck() {
+  async function runSelfCheck(isCancelled?: () => boolean) {
     setStatus("running");
     setReport(null);
     try {
@@ -71,6 +71,7 @@ export function AtsChecker() {
       );
       const parsed = parseResumeText(text);
       const checks = compareRoundTrip(resume, parsed);
+      if (isCancelled?.()) return; // dialog was closed mid-check
       setReport({
         checks,
         readable: roundTripReadable(checks),
@@ -78,18 +79,26 @@ export function AtsChecker() {
       });
       setStatus("done");
     } catch (err) {
+      if (isCancelled?.()) return;
       console.error("ATS self-check failed", err);
       setStatus("error");
     }
   }
 
   // Auto-run the self-check each time the dialog opens (reflects latest edits).
+  // The cancellation flag prevents a check that's still running when the dialog
+  // closes from writing stale results.
   useEffect(() => {
-    if (open && status === "idle") void runSelfCheck();
     if (!open) {
       setStatus("idle");
       setReport(null);
+      return;
     }
+    let cancelled = false;
+    void runSelfCheck(() => cancelled);
+    return () => {
+      cancelled = true;
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open]);
 
@@ -104,7 +113,7 @@ export function AtsChecker() {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button variant="outline" size="sm">
+        <Button variant="outline" size="sm" aria-label="ATS check">
           <Gauge />
           <span className="hidden sm:inline">ATS check</span>
         </Button>
@@ -124,7 +133,7 @@ export function AtsChecker() {
           <div className="flex items-center justify-between">
             <h3 className="text-sm font-semibold">Can an ATS read your résumé?</h3>
             {status === "done" && (
-              <Button variant="ghost" size="sm" onClick={runSelfCheck}>
+              <Button variant="ghost" size="sm" onClick={() => runSelfCheck()}>
                 Re-run
               </Button>
             )}
@@ -140,7 +149,7 @@ export function AtsChecker() {
           {status === "error" && (
             <div className="flex items-center justify-between rounded-md border border-destructive/30 bg-destructive/5 p-3 text-sm text-destructive">
               <span>Couldn&apos;t run the check.</span>
-              <Button variant="outline" size="sm" onClick={runSelfCheck}>
+              <Button variant="outline" size="sm" onClick={() => runSelfCheck()}>
                 Retry
               </Button>
             </div>

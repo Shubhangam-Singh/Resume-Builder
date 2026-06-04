@@ -31,15 +31,30 @@ export function contactItems(basics: Basics): ContactItem[] {
   return items;
 }
 
-/** Which sections actually have content worth rendering. */
+/**
+ * Which sections should render: they need content AND must not be toggled off
+ * via `meta.hiddenSections`. All templates use this, so visibility is honored
+ * everywhere.
+ */
 export function sectionPresence(data: ResumeData) {
+  const hidden = new Set(data.meta.hiddenSections ?? []);
   return {
-    summary: !!data.basics.summary,
-    work: data.work.some((w) => w.name || w.position || w.highlights.length),
-    education: data.education.some((e) => e.institution || e.studyType),
-    projects: data.projects.some((p) => p.name || p.description),
-    skills: data.skills.some((s) => s.keywords.length || s.name),
-    certificates: data.certificates.some((c) => c.name),
+    summary: !hidden.has("summary") && !!data.basics.summary,
+    work:
+      !hidden.has("work") &&
+      data.work.some((w) => w.name || w.position || w.highlights.length),
+    education:
+      !hidden.has("education") &&
+      data.education.some((e) => e.institution || e.studyType),
+    projects:
+      !hidden.has("projects") &&
+      data.projects.some((p) => p.name || p.description),
+    skills:
+      !hidden.has("skills") &&
+      data.skills.some((s) => s.keywords.length || s.name),
+    certificates:
+      !hidden.has("certificates") &&
+      data.certificates.some((c) => c.name),
   };
 }
 

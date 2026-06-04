@@ -13,6 +13,7 @@ import {
   formatMonthYear,
 } from "@/lib/resume/format";
 import type { ResumeData } from "@/lib/resume/types";
+import { sectionPresence } from "./shared";
 
 /**
  * ATS Classic — single column, standard headings, real selectable text, no
@@ -159,11 +160,12 @@ export function AtsClassic({ data }: { data: ResumeData }) {
     );
   });
 
-  const hasWork = work.some((w) => w.name || w.position || w.highlights.length);
-  const hasEducation = education.some((e) => e.institution || e.studyType);
-  const hasProjects = projects.some((p) => p.name || p.description);
-  const hasSkills = skills.some((s) => s.keywords.length || s.name);
-  const hasCerts = certificates.some((c) => c.name);
+  const has = sectionPresence(data);
+  const hasWork = has.work;
+  const hasEducation = has.education;
+  const hasProjects = has.projects;
+  const hasSkills = has.skills;
+  const hasCerts = has.certificates;
 
   return (
     <Document
@@ -181,7 +183,7 @@ export function AtsClassic({ data }: { data: ResumeData }) {
         </View>
 
         {/* Summary */}
-        {basics.summary ? (
+        {has.summary ? (
           <View style={styles.section}>
             <SectionTitle>Summary</SectionTitle>
             <Text style={styles.summary}>{basics.summary}</Text>
