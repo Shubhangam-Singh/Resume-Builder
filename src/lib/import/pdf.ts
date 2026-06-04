@@ -66,9 +66,11 @@ function itemsToText(items: PdfTextItem[]): string {
     .join("\n");
 }
 
-export async function extractPdfText(file: File): Promise<string> {
+/** Extract text from raw PDF bytes (used by the ATS self-check round-trip). */
+export async function extractPdfTextFromData(
+  data: Uint8Array,
+): Promise<string> {
   const pdfjs = await loadPdfjs();
-  const data = new Uint8Array(await file.arrayBuffer());
   const loadingTask = pdfjs.getDocument({ data });
   const doc = await loadingTask.promise;
 
@@ -84,4 +86,8 @@ export async function extractPdfText(file: File): Promise<string> {
   } finally {
     await loadingTask.destroy();
   }
+}
+
+export async function extractPdfText(file: File): Promise<string> {
+  return extractPdfTextFromData(new Uint8Array(await file.arrayBuffer()));
 }

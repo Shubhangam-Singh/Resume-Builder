@@ -7,6 +7,7 @@ import { DownloadButton } from "@/components/pdf/DownloadButton";
 import { LivePreview } from "@/components/pdf/LivePreview";
 import { TemplateSwitcher } from "@/components/pdf/TemplateSwitcher";
 import { ImportResume } from "@/components/import/ImportResume";
+import { AtsChecker } from "@/components/ats/AtsChecker";
 import { useResumeStore } from "@/lib/store";
 import { Editor } from "./Editor";
 
@@ -55,6 +56,7 @@ export function Workspace() {
             Runs entirely in your browser
           </span>
           <ImportResume />
+          <AtsChecker />
           <Button variant="ghost" size="sm" onClick={handleLoadSample}>
             <Sparkles />
             <span className="hidden sm:inline">Sample</span>

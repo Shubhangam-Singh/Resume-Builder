@@ -38,6 +38,11 @@ ResumeForge does the opposite:
 - ✅ **Import an existing résumé** (PDF / DOCX / TXT). The file is read in your
   browser, parsed into structured fields, and shown in a "Review what we
   imported" step before anything is applied — nothing is committed silently.
+- ✅ **ATS check** — a self-check that renders your real PDF, reads the text
+  back, and re-parses it to confirm every field survives; plus paste a job
+  description to get a **keyword-coverage score** with matched/missing terms,
+  and flags for common issues (missing email/phone, multi-column template,
+  over-long lines, text-as-image).
 - ✅ Sample content on first load, plus "Start blank" to clear everything.
 
 > Coming next (see [Roadmap](#roadmap)): more templates, an ATS checker,
@@ -139,13 +144,15 @@ src/
   components/
     editor/                The form: Workspace, Editor tabs, section editors
     import/                Import dropzone + "Review what we imported" dialog
-    pdf/                   PDF document, templates, live viewer, download
+    ats/                   ATS checker dialog (self-check + JD match)
+    pdf/                   PDF document, templates, live viewer, download, switcher
     ui/                    shadcn/ui primitives (button, input, dialog, …)
   lib/
     resume/                Canonical types, factories, formatting helpers
     parser/                Résumé text parser (normalize, sections, name,
                            contact, skills, dates, structured entries) + tests
     import/                Client-side file → text extractors (pdf, docx)
+    ats/                   ATS self-check + JD keyword coverage + issue flags + tests
     store.ts               Zustand store (source of truth)
 scripts/
   copy-pdf-worker.mjs      Copies the pdf.js worker into public/ (predev/prebuild)
@@ -156,7 +163,7 @@ scripts/
 - **Phase 1 — MVP** ✅ manual entry → live preview → ATS PDF export _(done)_
 - **Phase 2 — Import** ✅ PDF/DOCX/TXT → parse → review → pre-filled form _(done)_
 - **Phase 3 — Templates** ✅ ATS Classic / Modern / Compact / Designer + instant switching _(done)_
-- **Phase 4** — ATS checker + job-description keyword matching
+- **Phase 4 — ATS checker** ✅ self-check round-trip + JD keyword coverage + issue flags _(done)_
 - **Phase 5** — autosave, multiple saved resumes, JSON import/export,
   drag-to-reorder, dark mode, accessibility polish
 

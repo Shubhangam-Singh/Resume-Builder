@@ -28,6 +28,7 @@ type Status = "idle" | "reading" | "review" | "error";
 
 export function ImportResume() {
   const setResume = useResumeStore((s) => s.setResume);
+  const currentTemplate = useResumeStore((s) => s.resume.meta.template);
   const [open, setOpen] = useState(false);
   const [status, setStatus] = useState<Status>("idle");
   const [fileName, setFileName] = useState("");
@@ -69,7 +70,13 @@ export function ImportResume() {
   }
 
   function applyImport() {
-    if (result) setResume(result.data);
+    if (result) {
+      // Import replaces content but keeps the template the user already picked.
+      setResume({
+        ...result.data,
+        meta: { ...result.data.meta, template: currentTemplate },
+      });
+    }
     handleOpenChange(false);
   }
 
