@@ -30,8 +30,10 @@ ResumeForge does the opposite:
 - ✅ **Live preview that _is_ the PDF.** The on-screen preview and the
   downloaded file are rendered from the exact same component, so they can never
   drift apart.
-- ✅ One **ATS Classic** template — single column, standard headings, real
-  selectable text, no tables or images.
+- ✅ **Four templates** with instant switching from the preview pane —
+  **ATS Classic**, **Modern**, and **Compact** (all single-column, ATS-safe),
+  plus **Designer** (two-column; flagged as potentially ATS-risky). Every
+  template renders the same `ResumeData`, so switching never loses data.
 - ✅ One-click **Download PDF** with real, selectable, machine-readable text.
 - ✅ **Import an existing résumé** (PDF / DOCX / TXT). The file is read in your
   browser, parsed into structured fields, and shown in a "Review what we
@@ -153,7 +155,7 @@ scripts/
 
 - **Phase 1 — MVP** ✅ manual entry → live preview → ATS PDF export _(done)_
 - **Phase 2 — Import** ✅ PDF/DOCX/TXT → parse → review → pre-filled form _(done)_
-- **Phase 3** — template gallery (Modern, Compact, Designer) + instant switching
+- **Phase 3 — Templates** ✅ ATS Classic / Modern / Compact / Designer + instant switching _(done)_
 - **Phase 4** — ATS checker + job-description keyword matching
 - **Phase 5** — autosave, multiple saved resumes, JSON import/export,
   drag-to-reorder, dark mode, accessibility polish

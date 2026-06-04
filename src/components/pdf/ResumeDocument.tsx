@@ -2,7 +2,7 @@ import { createElement, type ReactElement } from "react";
 import type { DocumentProps } from "@react-pdf/renderer";
 
 import type { ResumeData } from "@/lib/resume/types";
-import { getTemplate } from "./templates/registry";
+import { getTemplateComponent } from "./templates/registry";
 
 /**
  * Renders the resume as a React-PDF <Document> using the template selected in
@@ -10,7 +10,7 @@ import { getTemplate } from "./templates/registry";
  * the live preview and the file download, guaranteeing they never diverge.
  */
 export function ResumeDocument({ data }: { data: ResumeData }) {
-  const Template = getTemplate(data.meta.template).component;
+  const Template = getTemplateComponent(data.meta.template);
   return <Template data={data} />;
 }
 

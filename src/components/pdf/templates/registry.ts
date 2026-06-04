@@ -2,32 +2,25 @@ import type { ComponentType } from "react";
 
 import type { ResumeData } from "@/lib/resume/types";
 import { AtsClassic } from "./AtsClassic";
-
-export interface TemplateMeta {
-  id: string;
-  name: string;
-  description: string;
-  /** True for single-column, ATS-safe layouts. */
-  atsSafe: boolean;
-  component: ComponentType<{ data: ResumeData }>;
-}
+import { Compact } from "./Compact";
+import { Designer } from "./Designer";
+import { Modern } from "./Modern";
 
 /**
- * Available templates. Phase 1 ships one; the gallery (Phase 3) reads this
- * list, so adding a template is just a new entry here.
+ * Maps a template id to its React-PDF component. This module imports
+ * `@react-pdf/renderer` (via the templates), so it must only ever be reached
+ * through the dynamically-imported preview/download — never from SSR'd UI. UI
+ * that just needs names/badges should import `./meta` instead.
  */
-export const TEMPLATES: TemplateMeta[] = [
-  {
-    id: "ats-classic",
-    name: "ATS Classic",
-    description: "Single column, standard headings. Safest for ATS parsing.",
-    atsSafe: true,
-    component: AtsClassic,
-  },
-];
+const COMPONENTS: Record<string, ComponentType<{ data: ResumeData }>> = {
+  "ats-classic": AtsClassic,
+  modern: Modern,
+  compact: Compact,
+  designer: Designer,
+};
 
-export const DEFAULT_TEMPLATE_ID = "ats-classic";
-
-export function getTemplate(id: string): TemplateMeta {
-  return TEMPLATES.find((t) => t.id === id) ?? TEMPLATES[0];
+export function getTemplateComponent(
+  id: string,
+): ComponentType<{ data: ResumeData }> {
+  return COMPONENTS[id] ?? AtsClassic;
 }

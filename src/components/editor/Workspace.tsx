@@ -5,6 +5,7 @@ import { FileText, RotateCcw, ShieldCheck, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { DownloadButton } from "@/components/pdf/DownloadButton";
 import { LivePreview } from "@/components/pdf/LivePreview";
+import { TemplateSwitcher } from "@/components/pdf/TemplateSwitcher";
 import { ImportResume } from "@/components/import/ImportResume";
 import { useResumeStore } from "@/lib/store";
 import { Editor } from "./Editor";
@@ -78,10 +79,7 @@ export function Workspace() {
             <span className="text-xs font-medium text-muted-foreground">
               Live preview
             </span>
-            <span className="inline-flex items-center gap-1 text-xs text-muted-foreground">
-              <ShieldCheck className="h-3.5 w-3.5 text-emerald-600" />
-              ATS Classic
-            </span>
+            <TemplateSwitcher />
           </div>
           <div className="min-h-0 flex-1">
             <LivePreview />
