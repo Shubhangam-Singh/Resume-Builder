@@ -74,6 +74,8 @@ interface ResumeStore {
   setTemplate: (template: string) => void;
   toggleSection: (section: HideableSection) => void;
   moveSection: (section: HideableSection, dir: -1 | 1) => void;
+  setThemeColor: (color: string | undefined) => void;
+  setDensity: (density: "compact" | "standard" | "loose") => void;
 
   // whole-document
   setResume: (resume: ResumeData) => void;
@@ -157,6 +159,17 @@ export const useResumeStore = create<ResumeStore>((set) => {
     setTemplate: (template) =>
       mutate((r) => {
         r.meta.template = template;
+      }),
+
+    setThemeColor: (color) =>
+      mutate((r) => {
+        if (color) r.meta.themeColor = color;
+        else delete r.meta.themeColor;
+      }),
+
+    setDensity: (density) =>
+      mutate((r) => {
+        r.meta.density = density;
       }),
 
     toggleSection: (section) =>

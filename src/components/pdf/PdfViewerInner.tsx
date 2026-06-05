@@ -22,6 +22,8 @@ function structureKey(data: ResumeData): string {
     data.meta.template,
     resolveSectionOrder(data.meta).join(","),
     (data.meta.hiddenSections ?? []).join(","),
+    data.meta.themeColor ?? "",
+    data.meta.density ?? "standard",
   ].join("|");
 }
 

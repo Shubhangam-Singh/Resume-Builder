@@ -155,12 +155,21 @@ function coerceResume(raw: unknown): ResumeData {
   });
 
   const meta = obj(root.meta);
+  const density = str(meta.density);
   out.meta = {
     template: str(meta.template) || out.meta.template,
     lastModified: new Date().toISOString(),
     hiddenSections: strList(meta.hiddenSections).filter((s): s is HideableSection =>
       (HIDEABLE as string[]).includes(s),
     ),
+    sectionOrder: strList(meta.sectionOrder).filter((s): s is HideableSection =>
+      (HIDEABLE as string[]).includes(s),
+    ),
+    themeColor: str(meta.themeColor) || undefined,
+    density:
+      density === "compact" || density === "standard" || density === "loose"
+        ? density
+        : undefined,
   };
 
   return out;

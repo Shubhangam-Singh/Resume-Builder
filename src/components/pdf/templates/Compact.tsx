@@ -9,6 +9,7 @@ import {
 
 import { formatDateRange, formatMonthYear } from "@/lib/resume/format";
 import { resolveSectionOrder } from "@/lib/resume/sections";
+import { makeScale, resolveAccent, type Scale } from "@/lib/resume/theme";
 import type { HideableSection, ResumeData } from "@/lib/resume/types";
 import {
   contactItems,
@@ -17,75 +18,81 @@ import {
 } from "./shared";
 
 /**
- * Compact — single column tuned to fit more on a page: smaller type, tighter
- * spacing, condensed entry headers. Still ATS-safe (one column, real text).
+ * Compact — single column tuned to fit more on a page. Accent + density come
+ * from `meta`; the default accent is a neutral charcoal so it stays plain.
  */
 
 const TEXT = "#1a1a1a";
 const MUTED = "#4a4a4a";
-const RULE = "#999999";
+const RULE = "#bbbbbb";
+const DEFAULT_ACCENT = "#1f2937";
 
-const styles = StyleSheet.create({
-  page: {
-    paddingTop: 28,
-    paddingBottom: 30,
-    paddingHorizontal: 38,
-    fontFamily: "Helvetica",
-    fontSize: 9,
-    color: TEXT,
-    lineHeight: 1.28,
-  },
-  header: { marginBottom: 7, textAlign: "center" },
-  name: { fontSize: 16, fontFamily: "Helvetica-Bold", lineHeight: 1.1 },
-  label: { fontSize: 9.5, color: MUTED, marginTop: 1 },
-  contact: { fontSize: 8.5, color: MUTED, marginTop: 3 },
-  contactSep: { color: RULE },
-  link: { color: MUTED, textDecoration: "none" },
+function makeStyles(accent: string, sc: Scale) {
+  return StyleSheet.create({
+    page: {
+      paddingTop: sc.s(28),
+      paddingBottom: sc.s(30),
+      paddingHorizontal: sc.s(38),
+      fontFamily: "Helvetica",
+      fontSize: sc.f(9),
+      color: TEXT,
+      lineHeight: sc.l(1.28),
+    },
+    header: { marginBottom: sc.s(7), textAlign: "center" },
+    name: { fontSize: sc.f(16), fontFamily: "Helvetica-Bold", lineHeight: sc.l(1.1) },
+    label: { fontSize: sc.f(9.5), color: MUTED, marginTop: sc.s(1) },
+    contact: { fontSize: sc.f(8.5), color: MUTED, marginTop: sc.s(3) },
+    contactSep: { color: RULE },
+    link: { color: accent, textDecoration: "none" },
 
-  section: { marginTop: 7 },
-  sectionTitle: {
-    fontSize: 9.5,
-    fontFamily: "Helvetica-Bold",
-    letterSpacing: 0.8,
-    textTransform: "uppercase",
-    borderBottomWidth: 0.75,
-    borderBottomColor: RULE,
-    paddingBottom: 1.5,
-    marginBottom: 3.5,
-  },
-  summary: { fontSize: 9 },
+    section: { marginTop: sc.s(7) },
+    sectionTitle: {
+      fontSize: sc.f(9.5),
+      fontFamily: "Helvetica-Bold",
+      color: accent,
+      letterSpacing: 0.8,
+      textTransform: "uppercase",
+      borderBottomWidth: 0.75,
+      borderBottomColor: accent,
+      paddingBottom: sc.s(1.5),
+      marginBottom: sc.s(3.5),
+    },
+    summary: { fontSize: sc.f(9) },
 
-  entry: { marginBottom: 5 },
-  entryHeaderRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "flex-start",
-  },
-  entryTitle: { fontSize: 9.5, fontFamily: "Helvetica-Bold" },
-  entrySubtitle: { fontSize: 9, color: MUTED },
-  entryMeta: {
-    fontSize: 8.5,
-    color: MUTED,
-    textAlign: "right",
-    flexShrink: 0,
-    marginLeft: 10,
-  },
-  entrySummary: { fontSize: 9, marginTop: 1 },
+    entry: { marginBottom: sc.s(5) },
+    entryHeaderRow: {
+      flexDirection: "row",
+      justifyContent: "space-between",
+      alignItems: "flex-start",
+    },
+    entryTitle: { fontSize: sc.f(9.5), fontFamily: "Helvetica-Bold" },
+    entrySubtitle: { fontSize: sc.f(9), color: MUTED },
+    entryMeta: {
+      fontSize: sc.f(8.5),
+      color: MUTED,
+      textAlign: "right",
+      flexShrink: 0,
+      marginLeft: sc.s(10),
+    },
+    entrySummary: { fontSize: sc.f(9), marginTop: sc.s(1) },
 
-  bulletRow: { flexDirection: "row", marginTop: 1, paddingRight: 2 },
-  bulletGlyph: { width: 9, fontSize: 9 },
-  bulletText: { flex: 1, fontSize: 9 },
+    bulletRow: { flexDirection: "row", marginTop: sc.s(1), paddingRight: sc.s(2) },
+    bulletGlyph: { width: sc.s(9), color: accent, fontSize: sc.f(9) },
+    bulletText: { flex: 1, fontSize: sc.f(9) },
 
-  skillRow: { flexDirection: "row", marginBottom: 1.5 },
-  skillCategory: { fontFamily: "Helvetica-Bold", fontSize: 9 },
-  skillKeywords: { flex: 1, fontSize: 9 },
-});
+    skillRow: { flexDirection: "row", marginBottom: sc.s(1.5) },
+    skillCategory: { fontFamily: "Helvetica-Bold", fontSize: sc.f(9) },
+    skillKeywords: { flex: 1, fontSize: sc.f(9) },
+  });
+}
 
-function SectionTitle({ children }: { children: string }) {
+type Styles = ReturnType<typeof makeStyles>;
+
+function SectionTitle({ styles, children }: { styles: Styles; children: string }) {
   return <Text style={styles.sectionTitle}>{children}</Text>;
 }
 
-function Bullet({ children }: { children: string }) {
+function Bullet({ styles, children }: { styles: Styles; children: string }) {
   return (
     <View style={styles.bulletRow}>
       <Text style={styles.bulletGlyph}>•</Text>
@@ -98,20 +105,22 @@ export function Compact({ data }: { data: ResumeData }) {
   const { basics, work, education, projects, skills, certificates } = data;
   const has = sectionPresence(data);
   const items = contactItems(basics);
+  const accent = resolveAccent(data.meta.themeColor, DEFAULT_ACCENT);
+  const styles = makeStyles(accent, makeScale(data.meta.density));
 
   const renderSection = (key: HideableSection): React.ReactNode => {
     switch (key) {
       case "summary":
         return has.summary ? (
           <View key="summary" style={styles.section}>
-            <SectionTitle>Summary</SectionTitle>
+            <SectionTitle styles={styles}>Summary</SectionTitle>
             <Text style={styles.summary}>{basics.summary}</Text>
           </View>
         ) : null;
       case "work":
         return has.work ? (
           <View key="work" style={styles.section}>
-            <SectionTitle>Experience</SectionTitle>
+            <SectionTitle styles={styles}>Experience</SectionTitle>
             {work.map((w) => (
               <View key={w.id} style={styles.entry} wrap={false}>
                 <View style={styles.entryHeaderRow}>
@@ -133,7 +142,9 @@ export function Compact({ data }: { data: ResumeData }) {
                   <Text style={styles.entrySummary}>{w.summary}</Text>
                 ) : null}
                 {w.highlights.map((h, i) => (
-                  <Bullet key={i}>{h}</Bullet>
+                  <Bullet key={i} styles={styles}>
+                    {h}
+                  </Bullet>
                 ))}
               </View>
             ))}
@@ -142,7 +153,7 @@ export function Compact({ data }: { data: ResumeData }) {
       case "education":
         return has.education ? (
           <View key="education" style={styles.section}>
-            <SectionTitle>Education</SectionTitle>
+            <SectionTitle styles={styles}>Education</SectionTitle>
             {education.map((e) => (
               <View key={e.id} style={styles.entry} wrap={false}>
                 <View style={styles.entryHeaderRow}>
@@ -169,7 +180,7 @@ export function Compact({ data }: { data: ResumeData }) {
       case "projects":
         return has.projects ? (
           <View key="projects" style={styles.section}>
-            <SectionTitle>Projects</SectionTitle>
+            <SectionTitle styles={styles}>Projects</SectionTitle>
             {projects.map((p) => (
               <View key={p.id} style={styles.entry} wrap={false}>
                 <View style={styles.entryHeaderRow}>
@@ -190,7 +201,9 @@ export function Compact({ data }: { data: ResumeData }) {
                   <Text style={styles.entrySummary}>{p.description}</Text>
                 ) : null}
                 {p.highlights.map((h, i) => (
-                  <Bullet key={i}>{h}</Bullet>
+                  <Bullet key={i} styles={styles}>
+                    {h}
+                  </Bullet>
                 ))}
               </View>
             ))}
@@ -199,7 +212,7 @@ export function Compact({ data }: { data: ResumeData }) {
       case "skills":
         return has.skills ? (
           <View key="skills" style={styles.section}>
-            <SectionTitle>Skills</SectionTitle>
+            <SectionTitle styles={styles}>Skills</SectionTitle>
             {skills.map((s) => (
               <View key={s.id} style={styles.skillRow}>
                 {s.name ? (
@@ -213,7 +226,7 @@ export function Compact({ data }: { data: ResumeData }) {
       case "certificates":
         return has.certificates ? (
           <View key="certificates" style={styles.section}>
-            <SectionTitle>Certifications</SectionTitle>
+            <SectionTitle styles={styles}>Certifications</SectionTitle>
             {certificates.map((c) => (
               <View key={c.id} style={styles.entry} wrap={false}>
                 <View style={styles.entryHeaderRow}>

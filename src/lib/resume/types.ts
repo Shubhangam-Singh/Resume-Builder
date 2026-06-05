@@ -95,6 +95,10 @@ export interface ResumeMeta {
   hiddenSections?: HideableSection[];
   /** Order body sections render in. Absent / partial = default order. */
   sectionOrder?: HideableSection[];
+  /** Accent color id (see theme.ts ACCENTS). Absent = template default. */
+  themeColor?: string;
+  /** Layout density. Absent = "standard". */
+  density?: "compact" | "standard" | "loose";
 }
 
 export interface ResumeData {

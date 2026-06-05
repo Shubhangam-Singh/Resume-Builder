@@ -9,6 +9,7 @@ import {
 
 import { formatDateRange, formatMonthYear } from "@/lib/resume/format";
 import { resolveSectionOrder } from "@/lib/resume/sections";
+import { makeScale, resolveAccent, type Scale } from "@/lib/resume/theme";
 import type { HideableSection, ResumeData } from "@/lib/resume/types";
 import {
   contactItems,
@@ -24,110 +25,121 @@ const SIDEBAR_SECTIONS = new Set<HideableSection>([
 
 /**
  * Designer — two-column layout with a tinted sidebar. Best for human reviewers
- * and portfolios; the multi-column structure can reduce ATS compatibility, so
- * it is clearly flagged as such in the template picker.
+ * and portfolios; the multi-column structure can reduce ATS compatibility.
+ * Accent + density come from `meta` (default accent teal).
  */
 
-const ACCENT = "#0e7490";
 const TEXT = "#1f2937";
 const MUTED = "#5b6675";
 const SIDEBAR_BG = "#f1f5f9";
+const SIDEBAR_RULE = "#cbd5e1";
 const SIDEBAR_WIDTH = "34%";
+const DEFAULT_ACCENT = "#0e7490";
 
-const styles = StyleSheet.create({
-  page: {
-    fontFamily: "Helvetica",
-    fontSize: 10,
-    color: TEXT,
-    lineHeight: 1.4,
-  },
-  sidebarBg: {
-    position: "absolute",
-    top: 0,
-    bottom: 0,
-    left: 0,
-    width: SIDEBAR_WIDTH,
-    backgroundColor: SIDEBAR_BG,
-  },
-  row: { flexDirection: "row" },
+function makeStyles(accent: string, sc: Scale) {
+  return StyleSheet.create({
+    page: {
+      fontFamily: "Helvetica",
+      fontSize: sc.f(10),
+      color: TEXT,
+      lineHeight: sc.l(1.4),
+    },
+    sidebarBg: {
+      position: "absolute",
+      top: 0,
+      bottom: 0,
+      left: 0,
+      width: SIDEBAR_WIDTH,
+      backgroundColor: SIDEBAR_BG,
+    },
+    row: { flexDirection: "row" },
 
-  sidebar: {
-    width: SIDEBAR_WIDTH,
-    paddingVertical: 34,
-    paddingHorizontal: 18,
-  },
-  main: { flex: 1, paddingVertical: 34, paddingHorizontal: 24 },
+    sidebar: {
+      width: SIDEBAR_WIDTH,
+      paddingVertical: sc.s(34),
+      paddingHorizontal: sc.s(18),
+    },
+    main: { flex: 1, paddingVertical: sc.s(34), paddingHorizontal: sc.s(24) },
 
-  // Main header
-  name: {
-    fontSize: 22,
-    fontFamily: "Helvetica-Bold",
-    color: TEXT,
-    lineHeight: 1.12,
-  },
-  label: { fontSize: 11.5, color: ACCENT, marginTop: 2, marginBottom: 4 },
+    name: {
+      fontSize: sc.f(22),
+      fontFamily: "Helvetica-Bold",
+      color: TEXT,
+      lineHeight: sc.l(1.12),
+    },
+    label: {
+      fontSize: sc.f(11.5),
+      color: accent,
+      marginTop: sc.s(2),
+      marginBottom: sc.s(4),
+    },
 
-  // Section titles
-  mainTitle: {
-    fontSize: 11,
-    fontFamily: "Helvetica-Bold",
-    color: ACCENT,
-    letterSpacing: 1,
-    textTransform: "uppercase",
-    borderBottomWidth: 1.5,
-    borderBottomColor: ACCENT,
-    paddingBottom: 2,
-    marginBottom: 6,
-  },
-  sideTitle: {
-    fontSize: 10,
-    fontFamily: "Helvetica-Bold",
-    color: ACCENT,
-    letterSpacing: 1,
-    textTransform: "uppercase",
-    borderBottomWidth: 1,
-    borderBottomColor: "#cbd5e1",
-    paddingBottom: 2,
-    marginBottom: 5,
-  },
+    mainTitle: {
+      fontSize: sc.f(11),
+      fontFamily: "Helvetica-Bold",
+      color: accent,
+      letterSpacing: 1,
+      textTransform: "uppercase",
+      borderBottomWidth: 1.5,
+      borderBottomColor: accent,
+      paddingBottom: sc.s(2),
+      marginBottom: sc.s(6),
+    },
+    sideTitle: {
+      fontSize: sc.f(10),
+      fontFamily: "Helvetica-Bold",
+      color: accent,
+      letterSpacing: 1,
+      textTransform: "uppercase",
+      borderBottomWidth: 1,
+      borderBottomColor: SIDEBAR_RULE,
+      paddingBottom: sc.s(2),
+      marginBottom: sc.s(5),
+    },
 
-  mainSection: { marginTop: 13 },
-  sideSection: { marginBottom: 14 },
+    mainSection: { marginTop: sc.s(13) },
+    sideSection: { marginBottom: sc.s(14) },
 
-  summary: { fontSize: 10 },
+    summary: { fontSize: sc.f(10) },
 
-  // Sidebar items
-  sideItem: { marginBottom: 7 },
-  sideLine: { fontSize: 9, marginBottom: 2 },
-  sideLink: { fontSize: 9, color: TEXT, textDecoration: "none", marginBottom: 2 },
-  sideItemTitle: { fontSize: 9.5, fontFamily: "Helvetica-Bold" },
-  sideItemText: { fontSize: 9, color: MUTED },
-  sideItemMeta: { fontSize: 8.5, color: MUTED },
+    sideItem: { marginBottom: sc.s(7) },
+    sideLine: { fontSize: sc.f(9), marginBottom: sc.s(2) },
+    sideLink: {
+      fontSize: sc.f(9),
+      color: accent,
+      textDecoration: "none",
+      marginBottom: sc.s(2),
+    },
+    sideItemTitle: { fontSize: sc.f(9.5), fontFamily: "Helvetica-Bold" },
+    sideItemText: { fontSize: sc.f(9), color: MUTED },
+    sideItemMeta: { fontSize: sc.f(8.5), color: MUTED },
 
-  // Main entries
-  entry: { marginBottom: 9 },
-  entryHeaderRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "flex-start",
-  },
-  entryTitle: { fontSize: 10.5, fontFamily: "Helvetica-Bold" },
-  entrySubtitle: { fontSize: 10, color: MUTED },
-  entryMeta: {
-    fontSize: 9,
-    color: MUTED,
-    textAlign: "right",
-    flexShrink: 0,
-    marginLeft: 10,
-  },
-  entrySummary: { fontSize: 10, marginTop: 2 },
+    entry: { marginBottom: sc.s(9) },
+    entryHeaderRow: {
+      flexDirection: "row",
+      justifyContent: "space-between",
+      alignItems: "flex-start",
+    },
+    entryTitle: { fontSize: sc.f(10.5), fontFamily: "Helvetica-Bold" },
+    entrySubtitle: { fontSize: sc.f(10), color: MUTED },
+    entryMeta: {
+      fontSize: sc.f(9),
+      color: MUTED,
+      textAlign: "right",
+      flexShrink: 0,
+      marginLeft: sc.s(10),
+    },
+    entrySummary: { fontSize: sc.f(10), marginTop: sc.s(2) },
 
-  bulletRow: { flexDirection: "row", marginTop: 2, paddingRight: 4 },
-  bulletGlyph: { width: 11, color: ACCENT, fontSize: 10 },
-  bulletText: { flex: 1, fontSize: 10 },
-});
+    bulletRow: { flexDirection: "row", marginTop: sc.s(2), paddingRight: sc.s(4) },
+    bulletGlyph: { width: sc.s(11), color: accent, fontSize: sc.f(10) },
+    bulletText: { flex: 1, fontSize: sc.f(10) },
+  });
+}
 
-function Bullet({ children }: { children: string }) {
+type Styles = ReturnType<typeof makeStyles>;
+
+function Bullet({ styles, children }: { styles: Styles; children: string }) {
   return (
     <View style={styles.bulletRow}>
       <Text style={styles.bulletGlyph}>•</Text>
@@ -140,6 +152,8 @@ export function Designer({ data }: { data: ResumeData }) {
   const { basics, work, education, projects, skills, certificates } = data;
   const has = sectionPresence(data);
   const items = contactItems(basics);
+  const accent = resolveAccent(data.meta.themeColor, DEFAULT_ACCENT);
+  const styles = makeStyles(accent, makeScale(data.meta.density));
   const order = resolveSectionOrder(data.meta);
   const sidebarOrder = order.filter((k) => SIDEBAR_SECTIONS.has(k));
   const mainOrder = order.filter((k) => !SIDEBAR_SECTIONS.has(k));
@@ -233,7 +247,9 @@ export function Designer({ data }: { data: ResumeData }) {
                   <Text style={styles.entrySummary}>{w.summary}</Text>
                 ) : null}
                 {w.highlights.map((h, i) => (
-                  <Bullet key={i}>{h}</Bullet>
+                  <Bullet key={i} styles={styles}>
+                    {h}
+                  </Bullet>
                 ))}
               </View>
             ))}
@@ -263,7 +279,9 @@ export function Designer({ data }: { data: ResumeData }) {
                   <Text style={styles.entrySummary}>{p.description}</Text>
                 ) : null}
                 {p.highlights.map((h, i) => (
-                  <Bullet key={i}>{h}</Bullet>
+                  <Bullet key={i} styles={styles}>
+                    {h}
+                  </Bullet>
                 ))}
               </View>
             ))}

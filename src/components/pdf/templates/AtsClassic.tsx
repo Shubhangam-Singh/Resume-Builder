@@ -13,99 +13,104 @@ import {
   formatMonthYear,
 } from "@/lib/resume/format";
 import { resolveSectionOrder } from "@/lib/resume/sections";
+import { makeScale, resolveAccent, type Scale } from "@/lib/resume/theme";
 import type { HideableSection, ResumeData } from "@/lib/resume/types";
 import { sectionPresence } from "./shared";
 
 /**
  * ATS Classic — single column, standard headings, real selectable text, no
  * tables or images. The safest possible layout for applicant tracking systems.
+ * Accent + density come from `meta`; the default accent is a neutral charcoal.
  *
  * This same component renders both the on-screen preview and the downloaded
  * file, so what you see is exactly what you get.
  */
 
-const COLORS = {
-  text: "#1a1a1a",
-  muted: "#444444",
-  rule: "#999999",
-  link: "#1a1a1a",
-};
+const TEXT = "#1a1a1a";
+const MUTED = "#444444";
+const RULE = "#999999";
+const DEFAULT_ACCENT = "#1f2937";
 
-const styles = StyleSheet.create({
-  page: {
-    paddingTop: 40,
-    paddingBottom: 44,
-    paddingHorizontal: 48,
-    fontFamily: "Helvetica",
-    fontSize: 10,
-    color: COLORS.text,
-    lineHeight: 1.4,
-  },
+function makeStyles(accent: string, sc: Scale) {
+  return StyleSheet.create({
+    page: {
+      paddingTop: sc.s(40),
+      paddingBottom: sc.s(44),
+      paddingHorizontal: sc.s(48),
+      fontFamily: "Helvetica",
+      fontSize: sc.f(10),
+      color: TEXT,
+      lineHeight: sc.l(1.4),
+    },
 
-  // Header
-  header: { marginBottom: 12, textAlign: "center" },
-  name: {
-    fontSize: 20,
-    fontFamily: "Helvetica-Bold",
-    letterSpacing: 0.5,
-    lineHeight: 1.2,
-    marginBottom: 3,
-  },
-  label: { fontSize: 11, color: COLORS.muted, marginTop: 1, lineHeight: 1.2 },
-  contact: {
-    fontSize: 9,
-    color: COLORS.muted,
-    marginTop: 6,
-    textAlign: "center",
-  },
-  contactSep: { color: COLORS.rule },
-  link: { color: COLORS.link, textDecoration: "none" },
+    header: { marginBottom: sc.s(12), textAlign: "center" },
+    name: {
+      fontSize: sc.f(20),
+      fontFamily: "Helvetica-Bold",
+      letterSpacing: 0.5,
+      lineHeight: sc.l(1.2),
+      marginBottom: sc.s(3),
+    },
+    label: {
+      fontSize: sc.f(11),
+      color: MUTED,
+      marginTop: sc.s(1),
+      lineHeight: sc.l(1.2),
+    },
+    contact: {
+      fontSize: sc.f(9),
+      color: MUTED,
+      marginTop: sc.s(6),
+      textAlign: "center",
+    },
+    contactSep: { color: RULE },
+    link: { color: accent, textDecoration: "none" },
 
-  // Sections
-  section: { marginTop: 12 },
-  sectionTitle: {
-    fontSize: 11,
-    fontFamily: "Helvetica-Bold",
-    letterSpacing: 1,
-    textTransform: "uppercase",
-    borderBottomWidth: 1,
-    borderBottomColor: COLORS.rule,
-    paddingBottom: 2,
-    marginBottom: 6,
-  },
+    section: { marginTop: sc.s(12) },
+    sectionTitle: {
+      fontSize: sc.f(11),
+      fontFamily: "Helvetica-Bold",
+      color: accent,
+      letterSpacing: 1,
+      textTransform: "uppercase",
+      borderBottomWidth: 1,
+      borderBottomColor: accent,
+      paddingBottom: sc.s(2),
+      marginBottom: sc.s(6),
+    },
 
-  summary: { fontSize: 10, color: COLORS.text },
+    summary: { fontSize: sc.f(10), color: TEXT },
 
-  // Entries
-  entry: { marginBottom: 8 },
-  entryHeaderRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "flex-start",
-  },
-  entryTitle: { fontSize: 10.5, fontFamily: "Helvetica-Bold" },
-  entrySubtitle: { fontSize: 10, color: COLORS.muted },
-  entryMeta: {
-    fontSize: 9.5,
-    color: COLORS.muted,
-    textAlign: "right",
-    flexShrink: 0,
-    marginLeft: 12,
-  },
-  entrySummary: { fontSize: 10, marginTop: 2 },
+    entry: { marginBottom: sc.s(8) },
+    entryHeaderRow: {
+      flexDirection: "row",
+      justifyContent: "space-between",
+      alignItems: "flex-start",
+    },
+    entryTitle: { fontSize: sc.f(10.5), fontFamily: "Helvetica-Bold" },
+    entrySubtitle: { fontSize: sc.f(10), color: MUTED },
+    entryMeta: {
+      fontSize: sc.f(9.5),
+      color: MUTED,
+      textAlign: "right",
+      flexShrink: 0,
+      marginLeft: sc.s(12),
+    },
+    entrySummary: { fontSize: sc.f(10), marginTop: sc.s(2) },
 
-  // Bullets
-  bulletRow: { flexDirection: "row", marginTop: 2, paddingRight: 4 },
-  bulletGlyph: { width: 12, fontSize: 10 },
-  bulletText: { flex: 1, fontSize: 10 },
+    bulletRow: { flexDirection: "row", marginTop: sc.s(2), paddingRight: sc.s(4) },
+    bulletGlyph: { width: sc.s(12), fontSize: sc.f(10), color: accent },
+    bulletText: { flex: 1, fontSize: sc.f(10) },
 
-  // Skills
-  skillRow: { flexDirection: "row", marginBottom: 3 },
-  skillCategory: { fontFamily: "Helvetica-Bold", fontSize: 10 },
-  skillKeywords: { flex: 1, fontSize: 10 },
-});
+    skillRow: { flexDirection: "row", marginBottom: sc.s(3) },
+    skillCategory: { fontFamily: "Helvetica-Bold", fontSize: sc.f(10) },
+    skillKeywords: { flex: 1, fontSize: sc.f(10) },
+  });
+}
 
-function Bullet({ children }: { children: string }) {
+type Styles = ReturnType<typeof makeStyles>;
+
+function Bullet({ styles, children }: { styles: Styles; children: string }) {
   return (
     <View style={styles.bulletRow}>
       <Text style={styles.bulletGlyph}>•</Text>
@@ -114,12 +119,12 @@ function Bullet({ children }: { children: string }) {
   );
 }
 
-function SectionTitle({ children }: { children: string }) {
+function SectionTitle({ styles, children }: { styles: Styles; children: string }) {
   return <Text style={styles.sectionTitle}>{children}</Text>;
 }
 
 /** Join an array of nodes with a separator glyph (for the contact line). */
-function joinNodes(nodes: React.ReactNode[]) {
+function joinNodes(nodes: React.ReactNode[], styles: Styles) {
   return nodes.map((node, i) => (
     <Text key={i}>
       {i > 0 ? <Text style={styles.contactSep}>{"  |  "}</Text> : null}
@@ -132,6 +137,8 @@ export function AtsClassic({ data }: { data: ResumeData }) {
   const { basics, work, education, projects, skills, certificates } = data;
   const locationText = formatLocation(basics.location);
   const has = sectionPresence(data);
+  const accent = resolveAccent(data.meta.themeColor, DEFAULT_ACCENT);
+  const styles = makeStyles(accent, makeScale(data.meta.density));
 
   const contactNodes: React.ReactNode[] = [];
   if (basics.email)
@@ -167,14 +174,14 @@ export function AtsClassic({ data }: { data: ResumeData }) {
       case "summary":
         return has.summary ? (
           <View key="summary" style={styles.section}>
-            <SectionTitle>Summary</SectionTitle>
+            <SectionTitle styles={styles}>Summary</SectionTitle>
             <Text style={styles.summary}>{basics.summary}</Text>
           </View>
         ) : null;
       case "work":
         return has.work ? (
           <View key="work" style={styles.section}>
-            <SectionTitle>Experience</SectionTitle>
+            <SectionTitle styles={styles}>Experience</SectionTitle>
             {work.map((w) => {
               const dates = formatDateRange(w.startDate, w.endDate);
               return (
@@ -198,7 +205,9 @@ export function AtsClassic({ data }: { data: ResumeData }) {
                     <Text style={styles.entrySummary}>{w.summary}</Text>
                   ) : null}
                   {w.highlights.map((h, i) => (
-                    <Bullet key={i}>{h}</Bullet>
+                    <Bullet key={i} styles={styles}>
+                      {h}
+                    </Bullet>
                   ))}
                 </View>
               );
@@ -208,7 +217,7 @@ export function AtsClassic({ data }: { data: ResumeData }) {
       case "education":
         return has.education ? (
           <View key="education" style={styles.section}>
-            <SectionTitle>Education</SectionTitle>
+            <SectionTitle styles={styles}>Education</SectionTitle>
             {education.map((e) => {
               const dates = formatDateRange(e.startDate, e.endDate);
               const degree = [e.studyType, e.area].filter(Boolean).join(", ");
@@ -240,7 +249,7 @@ export function AtsClassic({ data }: { data: ResumeData }) {
       case "projects":
         return has.projects ? (
           <View key="projects" style={styles.section}>
-            <SectionTitle>Projects</SectionTitle>
+            <SectionTitle styles={styles}>Projects</SectionTitle>
             {projects.map((p) => (
               <View key={p.id} style={styles.entry} wrap={false}>
                 <View style={styles.entryHeaderRow}>
@@ -263,7 +272,9 @@ export function AtsClassic({ data }: { data: ResumeData }) {
                   <Text style={styles.entrySummary}>{p.description}</Text>
                 ) : null}
                 {p.highlights.map((h, i) => (
-                  <Bullet key={i}>{h}</Bullet>
+                  <Bullet key={i} styles={styles}>
+                    {h}
+                  </Bullet>
                 ))}
               </View>
             ))}
@@ -272,7 +283,7 @@ export function AtsClassic({ data }: { data: ResumeData }) {
       case "skills":
         return has.skills ? (
           <View key="skills" style={styles.section}>
-            <SectionTitle>Skills</SectionTitle>
+            <SectionTitle styles={styles}>Skills</SectionTitle>
             {skills.map((s) => (
               <View key={s.id} style={styles.skillRow}>
                 {s.name ? (
@@ -286,7 +297,7 @@ export function AtsClassic({ data }: { data: ResumeData }) {
       case "certificates":
         return has.certificates ? (
           <View key="certificates" style={styles.section}>
-            <SectionTitle>Certifications</SectionTitle>
+            <SectionTitle styles={styles}>Certifications</SectionTitle>
             {certificates.map((c) => {
               const meta = [c.issuer, formatMonthYear(c.date)]
                 .filter(Boolean)
@@ -319,7 +330,7 @@ export function AtsClassic({ data }: { data: ResumeData }) {
           <Text style={styles.name}>{basics.name || "Your Name"}</Text>
           {basics.label ? <Text style={styles.label}>{basics.label}</Text> : null}
           {contactNodes.length > 0 ? (
-            <Text style={styles.contact}>{joinNodes(contactNodes)}</Text>
+            <Text style={styles.contact}>{joinNodes(contactNodes, styles)}</Text>
           ) : null}
         </View>
 

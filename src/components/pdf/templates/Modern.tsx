@@ -9,85 +9,91 @@ import {
 
 import { formatDateRange, formatMonthYear } from "@/lib/resume/format";
 import { resolveSectionOrder } from "@/lib/resume/sections";
+import { makeScale, resolveAccent, type Scale } from "@/lib/resume/theme";
 import type { HideableSection, ResumeData } from "@/lib/resume/types";
 import { contactItems, degreeLine, sectionPresence } from "./shared";
 
 /**
- * Modern — single column with a subtle blue accent and a left-aligned header.
- * Still ATS-safe: one column, standard headings, real selectable text.
+ * Modern — single column with a subtle accent and a left-aligned header. The
+ * accent color and layout density come from `meta` (theme.ts), so it stays
+ * ATS-safe (one column, real text) while being customizable.
  */
 
-const ACCENT = "#2563eb";
 const TEXT = "#1a1a1a";
 const MUTED = "#555555";
+const DEFAULT_ACCENT = "#2563eb";
 
-const styles = StyleSheet.create({
-  page: {
-    paddingTop: 38,
-    paddingBottom: 42,
-    paddingHorizontal: 46,
-    fontFamily: "Helvetica",
-    fontSize: 10,
-    color: TEXT,
-    lineHeight: 1.4,
-  },
-  header: { marginBottom: 12 },
-  name: {
-    fontSize: 22,
-    fontFamily: "Helvetica-Bold",
-    color: ACCENT,
-    lineHeight: 1.15,
-  },
-  label: { fontSize: 11, color: MUTED, marginTop: 2 },
-  contact: { fontSize: 9, color: MUTED, marginTop: 6 },
-  contactSep: { color: "#bbbbbb" },
-  link: { color: MUTED, textDecoration: "none" },
+function makeStyles(accent: string, sc: Scale) {
+  return StyleSheet.create({
+    page: {
+      paddingTop: sc.s(38),
+      paddingBottom: sc.s(42),
+      paddingHorizontal: sc.s(46),
+      fontFamily: "Helvetica",
+      fontSize: sc.f(10),
+      color: TEXT,
+      lineHeight: sc.l(1.4),
+    },
+    header: { marginBottom: sc.s(12) },
+    name: {
+      fontSize: sc.f(22),
+      fontFamily: "Helvetica-Bold",
+      color: accent,
+      lineHeight: sc.l(1.15),
+    },
+    label: { fontSize: sc.f(11), color: MUTED, marginTop: sc.s(2) },
+    contact: { fontSize: sc.f(9), color: MUTED, marginTop: sc.s(6) },
+    contactSep: { color: "#bbbbbb" },
+    link: { color: MUTED, textDecoration: "none" },
 
-  section: { marginTop: 13 },
-  sectionTitle: {
-    fontSize: 11,
-    fontFamily: "Helvetica-Bold",
-    color: ACCENT,
-    letterSpacing: 1.2,
-    textTransform: "uppercase",
-    borderBottomWidth: 1.5,
-    borderBottomColor: ACCENT,
-    paddingBottom: 2,
-    marginBottom: 6,
-  },
-  summary: { fontSize: 10 },
+    section: { marginTop: sc.s(13) },
+    sectionTitle: {
+      fontSize: sc.f(11),
+      fontFamily: "Helvetica-Bold",
+      color: accent,
+      letterSpacing: 1.2,
+      textTransform: "uppercase",
+      borderBottomWidth: 1.5,
+      borderBottomColor: accent,
+      paddingBottom: sc.s(2),
+      marginBottom: sc.s(6),
+    },
+    summary: { fontSize: sc.f(10) },
 
-  entry: { marginBottom: 8 },
-  entryHeaderRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "flex-start",
-  },
-  entryTitle: { fontSize: 10.5, fontFamily: "Helvetica-Bold" },
-  entrySubtitle: { fontSize: 10, color: MUTED },
-  entryMeta: {
-    fontSize: 9.5,
-    color: MUTED,
-    textAlign: "right",
-    flexShrink: 0,
-    marginLeft: 12,
-  },
-  entrySummary: { fontSize: 10, marginTop: 2 },
+    entry: { marginBottom: sc.s(8) },
+    entryHeaderRow: {
+      flexDirection: "row",
+      justifyContent: "space-between",
+      alignItems: "flex-start",
+    },
+    entryTitle: { fontSize: sc.f(10.5), fontFamily: "Helvetica-Bold" },
+    entrySubtitle: { fontSize: sc.f(10), color: MUTED },
+    entryMeta: {
+      fontSize: sc.f(9.5),
+      color: MUTED,
+      textAlign: "right",
+      flexShrink: 0,
+      marginLeft: sc.s(12),
+    },
+    entrySummary: { fontSize: sc.f(10), marginTop: sc.s(2) },
 
-  bulletRow: { flexDirection: "row", marginTop: 2, paddingRight: 4 },
-  bulletGlyph: { width: 12, color: ACCENT, fontSize: 10 },
-  bulletText: { flex: 1, fontSize: 10 },
+    bulletRow: { flexDirection: "row", marginTop: sc.s(2), paddingRight: sc.s(4) },
+    bulletGlyph: { width: sc.s(12), color: accent, fontSize: sc.f(10) },
+    bulletText: { flex: 1, fontSize: sc.f(10) },
 
-  skillRow: { flexDirection: "row", marginBottom: 3 },
-  skillCategory: { fontFamily: "Helvetica-Bold", fontSize: 10 },
-  skillKeywords: { flex: 1, fontSize: 10 },
-});
+    skillRow: { flexDirection: "row", marginBottom: sc.s(3) },
+    skillCategory: { fontFamily: "Helvetica-Bold", fontSize: sc.f(10) },
+    skillKeywords: { flex: 1, fontSize: sc.f(10) },
+  });
+}
 
-function SectionTitle({ children }: { children: string }) {
+type Styles = ReturnType<typeof makeStyles>;
+
+function SectionTitle({ styles, children }: { styles: Styles; children: string }) {
   return <Text style={styles.sectionTitle}>{children}</Text>;
 }
 
-function Bullet({ children }: { children: string }) {
+function Bullet({ styles, children }: { styles: Styles; children: string }) {
   return (
     <View style={styles.bulletRow}>
       <Text style={styles.bulletGlyph}>•</Text>
@@ -100,20 +106,22 @@ export function Modern({ data }: { data: ResumeData }) {
   const { basics, work, education, projects, skills, certificates } = data;
   const has = sectionPresence(data);
   const items = contactItems(basics);
+  const accent = resolveAccent(data.meta.themeColor, DEFAULT_ACCENT);
+  const styles = makeStyles(accent, makeScale(data.meta.density));
 
   const renderSection = (key: HideableSection): React.ReactNode => {
     switch (key) {
       case "summary":
         return has.summary ? (
           <View key="summary" style={styles.section}>
-            <SectionTitle>Summary</SectionTitle>
+            <SectionTitle styles={styles}>Summary</SectionTitle>
             <Text style={styles.summary}>{basics.summary}</Text>
           </View>
         ) : null;
       case "work":
         return has.work ? (
           <View key="work" style={styles.section}>
-            <SectionTitle>Experience</SectionTitle>
+            <SectionTitle styles={styles}>Experience</SectionTitle>
             {work.map((w) => (
               <View key={w.id} style={styles.entry} wrap={false}>
                 <View style={styles.entryHeaderRow}>
@@ -135,7 +143,9 @@ export function Modern({ data }: { data: ResumeData }) {
                   <Text style={styles.entrySummary}>{w.summary}</Text>
                 ) : null}
                 {w.highlights.map((h, i) => (
-                  <Bullet key={i}>{h}</Bullet>
+                  <Bullet key={i} styles={styles}>
+                    {h}
+                  </Bullet>
                 ))}
               </View>
             ))}
@@ -144,7 +154,7 @@ export function Modern({ data }: { data: ResumeData }) {
       case "education":
         return has.education ? (
           <View key="education" style={styles.section}>
-            <SectionTitle>Education</SectionTitle>
+            <SectionTitle styles={styles}>Education</SectionTitle>
             {education.map((e) => (
               <View key={e.id} style={styles.entry} wrap={false}>
                 <View style={styles.entryHeaderRow}>
@@ -171,7 +181,7 @@ export function Modern({ data }: { data: ResumeData }) {
       case "projects":
         return has.projects ? (
           <View key="projects" style={styles.section}>
-            <SectionTitle>Projects</SectionTitle>
+            <SectionTitle styles={styles}>Projects</SectionTitle>
             {projects.map((p) => (
               <View key={p.id} style={styles.entry} wrap={false}>
                 <View style={styles.entryHeaderRow}>
@@ -192,7 +202,9 @@ export function Modern({ data }: { data: ResumeData }) {
                   <Text style={styles.entrySummary}>{p.description}</Text>
                 ) : null}
                 {p.highlights.map((h, i) => (
-                  <Bullet key={i}>{h}</Bullet>
+                  <Bullet key={i} styles={styles}>
+                    {h}
+                  </Bullet>
                 ))}
               </View>
             ))}
@@ -201,7 +213,7 @@ export function Modern({ data }: { data: ResumeData }) {
       case "skills":
         return has.skills ? (
           <View key="skills" style={styles.section}>
-            <SectionTitle>Skills</SectionTitle>
+            <SectionTitle styles={styles}>Skills</SectionTitle>
             {skills.map((s) => (
               <View key={s.id} style={styles.skillRow}>
                 {s.name ? (
@@ -215,7 +227,7 @@ export function Modern({ data }: { data: ResumeData }) {
       case "certificates":
         return has.certificates ? (
           <View key="certificates" style={styles.section}>
-            <SectionTitle>Certifications</SectionTitle>
+            <SectionTitle styles={styles}>Certifications</SectionTitle>
             {certificates.map((c) => (
               <View key={c.id} style={styles.entry} wrap={false}>
                 <View style={styles.entryHeaderRow}>

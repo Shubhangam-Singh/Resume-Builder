@@ -3,6 +3,7 @@
 import { FileText, Loader2, ShieldCheck } from "lucide-react";
 
 import { DownloadButton } from "@/components/pdf/DownloadButton";
+import { DesignMenu } from "@/components/pdf/DesignMenu";
 import { LivePreview } from "@/components/pdf/LivePreview";
 import { TemplateSwitcher } from "@/components/pdf/TemplateSwitcher";
 import { ImportResume } from "@/components/import/ImportResume";
@@ -82,7 +83,10 @@ export function Workspace() {
             <span className="text-xs font-medium text-muted-foreground">
               Live preview
             </span>
-            <TemplateSwitcher />
+            <div className="flex items-center gap-1">
+              <DesignMenu />
+              <TemplateSwitcher />
+            </div>
           </div>
           <div className="min-h-0 flex-1">
             <LivePreview />
