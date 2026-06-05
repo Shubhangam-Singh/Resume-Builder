@@ -10,6 +10,7 @@ import {
   emptyWork,
   sampleResume,
 } from "./resume/factory";
+import { resolveSectionOrder } from "./resume/sections";
 import type {
   ArraySectionKey,
   Basics,
@@ -72,6 +73,7 @@ interface ResumeStore {
   // meta
   setTemplate: (template: string) => void;
   toggleSection: (section: HideableSection) => void;
+  moveSection: (section: HideableSection, dir: -1 | 1) => void;
 
   // whole-document
   setResume: (resume: ResumeData) => void;
@@ -163,6 +165,16 @@ export const useResumeStore = create<ResumeStore>((set) => {
         if (hidden.has(section)) hidden.delete(section);
         else hidden.add(section);
         r.meta.hiddenSections = [...hidden];
+      }),
+
+    moveSection: (section, dir) =>
+      mutate((r) => {
+        const order = resolveSectionOrder(r.meta);
+        const i = order.indexOf(section);
+        const j = i + dir;
+        if (i < 0 || j < 0 || j >= order.length) return;
+        [order[i], order[j]] = [order[j], order[i]];
+        r.meta.sectionOrder = order;
       }),
 
     setResume: (resume) =>

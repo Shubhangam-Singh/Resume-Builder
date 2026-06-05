@@ -93,6 +93,8 @@ export interface ResumeMeta {
   lastModified: string;
   /** Sections hidden from the rendered PDF. Absent = nothing hidden. */
   hiddenSections?: HideableSection[];
+  /** Order body sections render in. Absent / partial = default order. */
+  sectionOrder?: HideableSection[];
 }
 
 export interface ResumeData {

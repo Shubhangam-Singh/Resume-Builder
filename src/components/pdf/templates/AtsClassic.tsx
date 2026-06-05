@@ -12,7 +12,8 @@ import {
   formatLocation,
   formatMonthYear,
 } from "@/lib/resume/format";
-import type { ResumeData } from "@/lib/resume/types";
+import { resolveSectionOrder } from "@/lib/resume/sections";
+import type { HideableSection, ResumeData } from "@/lib/resume/types";
 import { sectionPresence } from "./shared";
 
 /**
@@ -130,6 +131,7 @@ function joinNodes(nodes: React.ReactNode[]) {
 export function AtsClassic({ data }: { data: ResumeData }) {
   const { basics, work, education, projects, skills, certificates } = data;
   const locationText = formatLocation(basics.location);
+  const has = sectionPresence(data);
 
   const contactNodes: React.ReactNode[] = [];
   if (basics.email)
@@ -160,39 +162,18 @@ export function AtsClassic({ data }: { data: ResumeData }) {
     );
   });
 
-  const has = sectionPresence(data);
-  const hasWork = has.work;
-  const hasEducation = has.education;
-  const hasProjects = has.projects;
-  const hasSkills = has.skills;
-  const hasCerts = has.certificates;
-
-  return (
-    <Document
-      title={basics.name ? `${basics.name} — Résumé` : "Résumé"}
-      author={basics.name || undefined}
-    >
-      <Page size="LETTER" style={styles.page}>
-        {/* Header */}
-        <View style={styles.header}>
-          <Text style={styles.name}>{basics.name || "Your Name"}</Text>
-          {basics.label ? <Text style={styles.label}>{basics.label}</Text> : null}
-          {contactNodes.length > 0 ? (
-            <Text style={styles.contact}>{joinNodes(contactNodes)}</Text>
-          ) : null}
-        </View>
-
-        {/* Summary */}
-        {has.summary ? (
-          <View style={styles.section}>
+  const renderSection = (key: HideableSection): React.ReactNode => {
+    switch (key) {
+      case "summary":
+        return has.summary ? (
+          <View key="summary" style={styles.section}>
             <SectionTitle>Summary</SectionTitle>
             <Text style={styles.summary}>{basics.summary}</Text>
           </View>
-        ) : null}
-
-        {/* Experience */}
-        {hasWork ? (
-          <View style={styles.section}>
+        ) : null;
+      case "work":
+        return has.work ? (
+          <View key="work" style={styles.section}>
             <SectionTitle>Experience</SectionTitle>
             {work.map((w) => {
               const dates = formatDateRange(w.startDate, w.endDate);
@@ -223,11 +204,10 @@ export function AtsClassic({ data }: { data: ResumeData }) {
               );
             })}
           </View>
-        ) : null}
-
-        {/* Education */}
-        {hasEducation ? (
-          <View style={styles.section}>
+        ) : null;
+      case "education":
+        return has.education ? (
+          <View key="education" style={styles.section}>
             <SectionTitle>Education</SectionTitle>
             {education.map((e) => {
               const dates = formatDateRange(e.startDate, e.endDate);
@@ -256,11 +236,10 @@ export function AtsClassic({ data }: { data: ResumeData }) {
               );
             })}
           </View>
-        ) : null}
-
-        {/* Projects */}
-        {hasProjects ? (
-          <View style={styles.section}>
+        ) : null;
+      case "projects":
+        return has.projects ? (
+          <View key="projects" style={styles.section}>
             <SectionTitle>Projects</SectionTitle>
             {projects.map((p) => (
               <View key={p.id} style={styles.entry} wrap={false}>
@@ -289,11 +268,10 @@ export function AtsClassic({ data }: { data: ResumeData }) {
               </View>
             ))}
           </View>
-        ) : null}
-
-        {/* Skills */}
-        {hasSkills ? (
-          <View style={styles.section}>
+        ) : null;
+      case "skills":
+        return has.skills ? (
+          <View key="skills" style={styles.section}>
             <SectionTitle>Skills</SectionTitle>
             {skills.map((s) => (
               <View key={s.id} style={styles.skillRow}>
@@ -304,11 +282,10 @@ export function AtsClassic({ data }: { data: ResumeData }) {
               </View>
             ))}
           </View>
-        ) : null}
-
-        {/* Certificates */}
-        {hasCerts ? (
-          <View style={styles.section}>
+        ) : null;
+      case "certificates":
+        return has.certificates ? (
+          <View key="certificates" style={styles.section}>
             <SectionTitle>Certifications</SectionTitle>
             {certificates.map((c) => {
               const meta = [c.issuer, formatMonthYear(c.date)]
@@ -326,7 +303,27 @@ export function AtsClassic({ data }: { data: ResumeData }) {
               );
             })}
           </View>
-        ) : null}
+        ) : null;
+      default:
+        return null;
+    }
+  };
+
+  return (
+    <Document
+      title={basics.name ? `${basics.name} — Résumé` : "Résumé"}
+      author={basics.name || undefined}
+    >
+      <Page size="LETTER" style={styles.page}>
+        <View style={styles.header}>
+          <Text style={styles.name}>{basics.name || "Your Name"}</Text>
+          {basics.label ? <Text style={styles.label}>{basics.label}</Text> : null}
+          {contactNodes.length > 0 ? (
+            <Text style={styles.contact}>{joinNodes(contactNodes)}</Text>
+          ) : null}
+        </View>
+
+        {resolveSectionOrder(data.meta).map(renderSection)}
       </Page>
     </Document>
   );

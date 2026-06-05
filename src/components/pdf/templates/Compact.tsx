@@ -8,7 +8,8 @@ import {
 } from "@react-pdf/renderer";
 
 import { formatDateRange, formatMonthYear } from "@/lib/resume/format";
-import type { ResumeData } from "@/lib/resume/types";
+import { resolveSectionOrder } from "@/lib/resume/sections";
+import type { HideableSection, ResumeData } from "@/lib/resume/types";
 import {
   contactItems,
   degreeLine,
@@ -98,42 +99,18 @@ export function Compact({ data }: { data: ResumeData }) {
   const has = sectionPresence(data);
   const items = contactItems(basics);
 
-  return (
-    <Document
-      title={basics.name ? `${basics.name} — Résumé` : "Résumé"}
-      author={basics.name || undefined}
-    >
-      <Page size="LETTER" style={styles.page}>
-        <View style={styles.header}>
-          <Text style={styles.name}>{basics.name || "Your Name"}</Text>
-          {basics.label ? <Text style={styles.label}>{basics.label}</Text> : null}
-          {items.length > 0 ? (
-            <Text style={styles.contact}>
-              {items.map((it, i) => (
-                <Text key={i}>
-                  {i > 0 ? <Text style={styles.contactSep}>{"  |  "}</Text> : null}
-                  {it.href ? (
-                    <Link style={styles.link} src={it.href}>
-                      {it.text}
-                    </Link>
-                  ) : (
-                    it.text
-                  )}
-                </Text>
-              ))}
-            </Text>
-          ) : null}
-        </View>
-
-        {has.summary ? (
-          <View style={styles.section}>
+  const renderSection = (key: HideableSection): React.ReactNode => {
+    switch (key) {
+      case "summary":
+        return has.summary ? (
+          <View key="summary" style={styles.section}>
             <SectionTitle>Summary</SectionTitle>
             <Text style={styles.summary}>{basics.summary}</Text>
           </View>
-        ) : null}
-
-        {has.work ? (
-          <View style={styles.section}>
+        ) : null;
+      case "work":
+        return has.work ? (
+          <View key="work" style={styles.section}>
             <SectionTitle>Experience</SectionTitle>
             {work.map((w) => (
               <View key={w.id} style={styles.entry} wrap={false}>
@@ -161,10 +138,10 @@ export function Compact({ data }: { data: ResumeData }) {
               </View>
             ))}
           </View>
-        ) : null}
-
-        {has.education ? (
-          <View style={styles.section}>
+        ) : null;
+      case "education":
+        return has.education ? (
+          <View key="education" style={styles.section}>
             <SectionTitle>Education</SectionTitle>
             {education.map((e) => (
               <View key={e.id} style={styles.entry} wrap={false}>
@@ -188,24 +165,10 @@ export function Compact({ data }: { data: ResumeData }) {
               </View>
             ))}
           </View>
-        ) : null}
-
-        {has.skills ? (
-          <View style={styles.section}>
-            <SectionTitle>Skills</SectionTitle>
-            {skills.map((s) => (
-              <View key={s.id} style={styles.skillRow}>
-                {s.name ? (
-                  <Text style={styles.skillCategory}>{`${s.name}: `}</Text>
-                ) : null}
-                <Text style={styles.skillKeywords}>{s.keywords.join(", ")}</Text>
-              </View>
-            ))}
-          </View>
-        ) : null}
-
-        {has.projects ? (
-          <View style={styles.section}>
+        ) : null;
+      case "projects":
+        return has.projects ? (
+          <View key="projects" style={styles.section}>
             <SectionTitle>Projects</SectionTitle>
             {projects.map((p) => (
               <View key={p.id} style={styles.entry} wrap={false}>
@@ -232,10 +195,24 @@ export function Compact({ data }: { data: ResumeData }) {
               </View>
             ))}
           </View>
-        ) : null}
-
-        {has.certificates ? (
-          <View style={styles.section}>
+        ) : null;
+      case "skills":
+        return has.skills ? (
+          <View key="skills" style={styles.section}>
+            <SectionTitle>Skills</SectionTitle>
+            {skills.map((s) => (
+              <View key={s.id} style={styles.skillRow}>
+                {s.name ? (
+                  <Text style={styles.skillCategory}>{`${s.name}: `}</Text>
+                ) : null}
+                <Text style={styles.skillKeywords}>{s.keywords.join(", ")}</Text>
+              </View>
+            ))}
+          </View>
+        ) : null;
+      case "certificates":
+        return has.certificates ? (
+          <View key="certificates" style={styles.section}>
             <SectionTitle>Certifications</SectionTitle>
             {certificates.map((c) => (
               <View key={c.id} style={styles.entry} wrap={false}>
@@ -252,7 +229,40 @@ export function Compact({ data }: { data: ResumeData }) {
               </View>
             ))}
           </View>
-        ) : null}
+        ) : null;
+      default:
+        return null;
+    }
+  };
+
+  return (
+    <Document
+      title={basics.name ? `${basics.name} — Résumé` : "Résumé"}
+      author={basics.name || undefined}
+    >
+      <Page size="LETTER" style={styles.page}>
+        <View style={styles.header}>
+          <Text style={styles.name}>{basics.name || "Your Name"}</Text>
+          {basics.label ? <Text style={styles.label}>{basics.label}</Text> : null}
+          {items.length > 0 ? (
+            <Text style={styles.contact}>
+              {items.map((it, i) => (
+                <Text key={i}>
+                  {i > 0 ? <Text style={styles.contactSep}>{"  |  "}</Text> : null}
+                  {it.href ? (
+                    <Link style={styles.link} src={it.href}>
+                      {it.text}
+                    </Link>
+                  ) : (
+                    it.text
+                  )}
+                </Text>
+              ))}
+            </Text>
+          ) : null}
+        </View>
+
+        {resolveSectionOrder(data.meta).map(renderSection)}
       </Page>
     </Document>
   );

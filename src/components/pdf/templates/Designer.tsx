@@ -8,12 +8,19 @@ import {
 } from "@react-pdf/renderer";
 
 import { formatDateRange, formatMonthYear } from "@/lib/resume/format";
-import type { ResumeData } from "@/lib/resume/types";
+import { resolveSectionOrder } from "@/lib/resume/sections";
+import type { HideableSection, ResumeData } from "@/lib/resume/types";
 import {
   contactItems,
   degreeLine,
   sectionPresence,
 } from "./shared";
+
+const SIDEBAR_SECTIONS = new Set<HideableSection>([
+  "skills",
+  "education",
+  "certificates",
+]);
 
 /**
  * Designer — two-column layout with a tinted sidebar. Best for human reviewers
@@ -133,6 +140,139 @@ export function Designer({ data }: { data: ResumeData }) {
   const { basics, work, education, projects, skills, certificates } = data;
   const has = sectionPresence(data);
   const items = contactItems(basics);
+  const order = resolveSectionOrder(data.meta);
+  const sidebarOrder = order.filter((k) => SIDEBAR_SECTIONS.has(k));
+  const mainOrder = order.filter((k) => !SIDEBAR_SECTIONS.has(k));
+
+  const renderSection = (key: HideableSection): React.ReactNode => {
+    switch (key) {
+      case "skills":
+        return has.skills ? (
+          <View key="skills" style={styles.sideSection}>
+            <Text style={styles.sideTitle}>Skills</Text>
+            {skills.map((s) => (
+              <View key={s.id} style={styles.sideItem}>
+                {s.name ? (
+                  <Text style={styles.sideItemTitle}>{s.name}</Text>
+                ) : null}
+                <Text style={styles.sideItemText}>{s.keywords.join(", ")}</Text>
+              </View>
+            ))}
+          </View>
+        ) : null;
+      case "education":
+        return has.education ? (
+          <View key="education" style={styles.sideSection}>
+            <Text style={styles.sideTitle}>Education</Text>
+            {education.map((e) => (
+              <View key={e.id} style={styles.sideItem}>
+                <Text style={styles.sideItemTitle}>{e.institution}</Text>
+                {degreeLine(e.studyType, e.area) ? (
+                  <Text style={styles.sideItemText}>
+                    {degreeLine(e.studyType, e.area)}
+                  </Text>
+                ) : null}
+                {formatDateRange(e.startDate, e.endDate) || e.score ? (
+                  <Text style={styles.sideItemMeta}>
+                    {[formatDateRange(e.startDate, e.endDate), e.score]
+                      .filter(Boolean)
+                      .join("  ·  ")}
+                  </Text>
+                ) : null}
+              </View>
+            ))}
+          </View>
+        ) : null;
+      case "certificates":
+        return has.certificates ? (
+          <View key="certificates" style={styles.sideSection}>
+            <Text style={styles.sideTitle}>Certifications</Text>
+            {certificates.map((c) => (
+              <View key={c.id} style={styles.sideItem}>
+                <Text style={styles.sideItemTitle}>{c.name}</Text>
+                {[c.issuer, formatMonthYear(c.date)].filter(Boolean).length ? (
+                  <Text style={styles.sideItemMeta}>
+                    {[c.issuer, formatMonthYear(c.date)]
+                      .filter(Boolean)
+                      .join("  ·  ")}
+                  </Text>
+                ) : null}
+              </View>
+            ))}
+          </View>
+        ) : null;
+      case "summary":
+        return has.summary ? (
+          <View key="summary" style={styles.mainSection}>
+            <Text style={styles.mainTitle}>Summary</Text>
+            <Text style={styles.summary}>{basics.summary}</Text>
+          </View>
+        ) : null;
+      case "work":
+        return has.work ? (
+          <View key="work" style={styles.mainSection}>
+            <Text style={styles.mainTitle}>Experience</Text>
+            {work.map((w) => (
+              <View key={w.id} style={styles.entry} wrap={false}>
+                <View style={styles.entryHeaderRow}>
+                  <Text style={[styles.entryTitle, { flex: 1 }]}>
+                    {w.position || w.name}
+                    {w.position && w.name ? (
+                      <Text style={styles.entrySubtitle}>{` — ${w.name}`}</Text>
+                    ) : null}
+                  </Text>
+                  {formatDateRange(w.startDate, w.endDate) || w.location ? (
+                    <Text style={styles.entryMeta}>
+                      {[formatDateRange(w.startDate, w.endDate), w.location]
+                        .filter(Boolean)
+                        .join("  ·  ")}
+                    </Text>
+                  ) : null}
+                </View>
+                {w.summary ? (
+                  <Text style={styles.entrySummary}>{w.summary}</Text>
+                ) : null}
+                {w.highlights.map((h, i) => (
+                  <Bullet key={i}>{h}</Bullet>
+                ))}
+              </View>
+            ))}
+          </View>
+        ) : null;
+      case "projects":
+        return has.projects ? (
+          <View key="projects" style={styles.mainSection}>
+            <Text style={styles.mainTitle}>Projects</Text>
+            {projects.map((p) => (
+              <View key={p.id} style={styles.entry} wrap={false}>
+                <View style={styles.entryHeaderRow}>
+                  <Text style={[styles.entryTitle, { flex: 1 }]}>
+                    {p.url ? (
+                      <Link style={styles.entrySubtitle} src={p.url}>
+                        {p.name}
+                      </Link>
+                    ) : (
+                      p.name
+                    )}
+                  </Text>
+                  {p.keywords.length ? (
+                    <Text style={styles.entryMeta}>{p.keywords.join(", ")}</Text>
+                  ) : null}
+                </View>
+                {p.description ? (
+                  <Text style={styles.entrySummary}>{p.description}</Text>
+                ) : null}
+                {p.highlights.map((h, i) => (
+                  <Bullet key={i}>{h}</Bullet>
+                ))}
+              </View>
+            ))}
+          </View>
+        ) : null;
+      default:
+        return null;
+    }
+  };
 
   return (
     <Document
@@ -161,63 +301,7 @@ export function Designer({ data }: { data: ResumeData }) {
                 )}
               </View>
             ) : null}
-
-            {has.skills ? (
-              <View style={styles.sideSection}>
-                <Text style={styles.sideTitle}>Skills</Text>
-                {skills.map((s) => (
-                  <View key={s.id} style={styles.sideItem}>
-                    {s.name ? (
-                      <Text style={styles.sideItemTitle}>{s.name}</Text>
-                    ) : null}
-                    <Text style={styles.sideItemText}>
-                      {s.keywords.join(", ")}
-                    </Text>
-                  </View>
-                ))}
-              </View>
-            ) : null}
-
-            {has.education ? (
-              <View style={styles.sideSection}>
-                <Text style={styles.sideTitle}>Education</Text>
-                {education.map((e) => (
-                  <View key={e.id} style={styles.sideItem}>
-                    <Text style={styles.sideItemTitle}>{e.institution}</Text>
-                    {degreeLine(e.studyType, e.area) ? (
-                      <Text style={styles.sideItemText}>
-                        {degreeLine(e.studyType, e.area)}
-                      </Text>
-                    ) : null}
-                    {formatDateRange(e.startDate, e.endDate) || e.score ? (
-                      <Text style={styles.sideItemMeta}>
-                        {[formatDateRange(e.startDate, e.endDate), e.score]
-                          .filter(Boolean)
-                          .join("  ·  ")}
-                      </Text>
-                    ) : null}
-                  </View>
-                ))}
-              </View>
-            ) : null}
-
-            {has.certificates ? (
-              <View style={styles.sideSection}>
-                <Text style={styles.sideTitle}>Certifications</Text>
-                {certificates.map((c) => (
-                  <View key={c.id} style={styles.sideItem}>
-                    <Text style={styles.sideItemTitle}>{c.name}</Text>
-                    {[c.issuer, formatMonthYear(c.date)].filter(Boolean).length ? (
-                      <Text style={styles.sideItemMeta}>
-                        {[c.issuer, formatMonthYear(c.date)]
-                          .filter(Boolean)
-                          .join("  ·  ")}
-                      </Text>
-                    ) : null}
-                  </View>
-                ))}
-              </View>
-            ) : null}
+            {sidebarOrder.map(renderSection)}
           </View>
 
           {/* Main column */}
@@ -226,78 +310,7 @@ export function Designer({ data }: { data: ResumeData }) {
             {basics.label ? (
               <Text style={styles.label}>{basics.label}</Text>
             ) : null}
-
-            {has.summary ? (
-              <View style={styles.mainSection}>
-                <Text style={styles.mainTitle}>Summary</Text>
-                <Text style={styles.summary}>{basics.summary}</Text>
-              </View>
-            ) : null}
-
-            {has.work ? (
-              <View style={styles.mainSection}>
-                <Text style={styles.mainTitle}>Experience</Text>
-                {work.map((w) => (
-                  <View key={w.id} style={styles.entry} wrap={false}>
-                    <View style={styles.entryHeaderRow}>
-                      <Text style={[styles.entryTitle, { flex: 1 }]}>
-                        {w.position || w.name}
-                        {w.position && w.name ? (
-                          <Text style={styles.entrySubtitle}>
-                            {` — ${w.name}`}
-                          </Text>
-                        ) : null}
-                      </Text>
-                      {formatDateRange(w.startDate, w.endDate) || w.location ? (
-                        <Text style={styles.entryMeta}>
-                          {[formatDateRange(w.startDate, w.endDate), w.location]
-                            .filter(Boolean)
-                            .join("  ·  ")}
-                        </Text>
-                      ) : null}
-                    </View>
-                    {w.summary ? (
-                      <Text style={styles.entrySummary}>{w.summary}</Text>
-                    ) : null}
-                    {w.highlights.map((h, i) => (
-                      <Bullet key={i}>{h}</Bullet>
-                    ))}
-                  </View>
-                ))}
-              </View>
-            ) : null}
-
-            {has.projects ? (
-              <View style={styles.mainSection}>
-                <Text style={styles.mainTitle}>Projects</Text>
-                {projects.map((p) => (
-                  <View key={p.id} style={styles.entry} wrap={false}>
-                    <View style={styles.entryHeaderRow}>
-                      <Text style={[styles.entryTitle, { flex: 1 }]}>
-                        {p.url ? (
-                          <Link style={styles.entrySubtitle} src={p.url}>
-                            {p.name}
-                          </Link>
-                        ) : (
-                          p.name
-                        )}
-                      </Text>
-                      {p.keywords.length ? (
-                        <Text style={styles.entryMeta}>
-                          {p.keywords.join(", ")}
-                        </Text>
-                      ) : null}
-                    </View>
-                    {p.description ? (
-                      <Text style={styles.entrySummary}>{p.description}</Text>
-                    ) : null}
-                    {p.highlights.map((h, i) => (
-                      <Bullet key={i}>{h}</Bullet>
-                    ))}
-                  </View>
-                ))}
-              </View>
-            ) : null}
+            {mainOrder.map(renderSection)}
           </View>
         </View>
       </Page>
