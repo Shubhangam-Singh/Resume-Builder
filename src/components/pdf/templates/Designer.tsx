@@ -16,6 +16,7 @@ import {
   type ResolvedFont,
   type Scale,
 } from "@/lib/resume/theme";
+import { ensureFontRegistered } from "@/lib/resume/fonts";
 import type { HideableSection, ResumeData } from "@/lib/resume/types";
 import {
   contactItems,
@@ -155,6 +156,7 @@ function Bullet({ styles, children }: { styles: Styles; children: string }) {
 }
 
 export function Designer({ data }: { data: ResumeData }) {
+  ensureFontRegistered(data.meta.fontFamily);
   const { basics, work, education, projects, skills, certificates } = data;
   const has = sectionPresence(data);
   const items = contactItems(basics);

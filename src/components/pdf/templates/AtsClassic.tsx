@@ -20,6 +20,7 @@ import {
   type ResolvedFont,
   type Scale,
 } from "@/lib/resume/theme";
+import { ensureFontRegistered } from "@/lib/resume/fonts";
 import type { HideableSection, ResumeData } from "@/lib/resume/types";
 import { sectionPresence } from "./shared";
 
@@ -140,6 +141,7 @@ function joinNodes(nodes: React.ReactNode[], styles: Styles) {
 }
 
 export function AtsClassic({ data }: { data: ResumeData }) {
+  ensureFontRegistered(data.meta.fontFamily);
   const { basics, work, education, projects, skills, certificates } = data;
   const locationText = formatLocation(basics.location);
   const has = sectionPresence(data);

@@ -5,7 +5,7 @@ import { Loader2, Sparkles } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { improveBullets } from "@/lib/ai/improve";
-import { useAiStore } from "@/lib/ai/store";
+import { selectActiveKey, selectActiveModel, useAiStore } from "@/lib/ai/store";
 
 /**
  * "Improve with AI" affordance for a bullet list. Renders nothing until the user
@@ -20,8 +20,9 @@ export function AiImproveButton({
   context: string;
   onResult: (improved: string[]) => void;
 }) {
-  const apiKey = useAiStore((s) => s.apiKey);
-  const model = useAiStore((s) => s.model);
+  const provider = useAiStore((s) => s.provider);
+  const apiKey   = useAiStore(selectActiveKey);
+  const model    = useAiStore(selectActiveModel);
   const [busy, setBusy] = useState(false);
 
   if (!apiKey) return null;
@@ -32,7 +33,7 @@ export function AiImproveButton({
     if (!usable.length || busy) return;
     setBusy(true);
     try {
-      onResult(await improveBullets(usable, context, { apiKey, model }));
+      onResult(await improveBullets(usable, context, { provider, apiKey, model }));
     } catch (err) {
       alert(err instanceof Error ? err.message : "AI request failed.");
     } finally {

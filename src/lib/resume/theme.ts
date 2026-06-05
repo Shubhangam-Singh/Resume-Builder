@@ -28,7 +28,9 @@ export function resolveAccent(id: string | undefined, fallback: string): string 
 }
 
 // ---- Fonts ----------------------------------------------------------------
-// Only the standard PDF fonts (no embedding, no network, ATS-safe).
+// Built-in PDF fonts need no files; the rest are bundled TTFs in public/fonts,
+// registered lazily (fonts.ts / ensureFontRegistered) so they embed in the PDF
+// and work offline.
 
 export interface FontOption {
   id: string;
@@ -38,9 +40,14 @@ export interface FontOption {
 }
 
 export const FONTS: FontOption[] = [
-  { id: "helvetica", label: "Helvetica (Sans-serif)", regular: "Helvetica", bold: "Helvetica-Bold" },
+  // ── Built-in PDF fonts (no registration, no files) ───────────────────────
+  { id: "helvetica", label: "Helvetica (Sans)", regular: "Helvetica", bold: "Helvetica-Bold" },
   { id: "times", label: "Times (Serif)", regular: "Times-Roman", bold: "Times-Bold" },
-  { id: "courier", label: "Courier (Monospace)", regular: "Courier", bold: "Courier-Bold" },
+  { id: "courier", label: "Courier (Mono)", regular: "Courier", bold: "Courier-Bold" },
+  // ── Bundled TTFs (public/fonts), registered via ensureFontRegistered ──────
+  { id: "lato", label: "Lato (Sans)", regular: "Lato", bold: "Lato-Bold" },
+  { id: "poppins", label: "Poppins (Sans)", regular: "Poppins", bold: "Poppins-Bold" },
+  { id: "crimson", label: "Crimson (Serif)", regular: "Crimson Text", bold: "Crimson Text-Bold" },
 ];
 
 export interface ResolvedFont {

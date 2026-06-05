@@ -1,10 +1,13 @@
 /**
- * Calls the Anthropic Messages API directly from the browser using the user's
- * own key (the `anthropic-dangerous-direct-browser-access` header enables CORS).
- * No backend, no key of ours — consistent with the app's privacy promise.
+ * Multi-provider AI bullet improver.
+ * Dispatches to the correct provider based on the `provider` argument.
+ * All calls go directly from the browser to the chosen API — no backend
+ * relay — honouring the app's bring-your-own-key privacy promise.
  */
 
-const ANTHROPIC_URL = "https://api.anthropic.com/v1/messages";
+import type { AiProvider } from "./store";
+
+// ── Shared ─────────────────────────────────────────────────────────────────
 
 const SYSTEM_PROMPT = `You are an expert resume editor. Rewrite each bullet point to be concise, results-oriented, and ATS-friendly:
 - Start with a strong past-tense action verb and cut filler words.
@@ -13,22 +16,10 @@ const SYSTEM_PROMPT = `You are an expert resume editor. Rewrite each bullet poin
 - Never fabricate employers, job titles, technologies, dates, or specific figures. Preserve the original meaning and any real numbers already present.
 Return ONLY a JSON array of strings — one rewritten bullet per input bullet, in the same order and the same count. No prose, no markdown.`;
 
-interface ImproveOptions {
-  apiKey: string;
-  model: string;
-}
-
-function extractText(data: unknown): string {
-  if (!data || typeof data !== "object") return "";
-  const content = (data as { content?: unknown }).content;
-  if (!Array.isArray(content)) return "";
-  return content
-    .map((block) =>
-      block && typeof block === "object" && "text" in block
-        ? String((block as { text?: unknown }).text ?? "")
-        : "",
-    )
-    .join("");
+function buildUserPrompt(bullets: string[], context: string): string {
+  return `${context ? `Context: ${context}\n\n` : ""}Improve these ${bullets.length} resume bullet point(s). Return a JSON array of exactly ${bullets.length} string(s).\n\n${bullets
+    .map((b, i) => `${i + 1}. ${b}`)
+    .join("\n")}`;
 }
 
 function parseJsonArray(text: string): string[] | null {
@@ -44,32 +35,20 @@ function parseJsonArray(text: string): string[] | null {
   }
 }
 
-async function errorMessage(res: Response): Promise<string> {
-  if (res.status === 401) return "Invalid API key — check it in AI settings.";
-  if (res.status === 429) return "Rate limited by Anthropic — try again shortly.";
-  try {
-    const body: unknown = await res.json();
-    const msg =
-      body && typeof body === "object"
-        ? (body as { error?: { message?: string } }).error?.message
-        : undefined;
-    return msg ? `Anthropic API error: ${msg}` : `Request failed (${res.status}).`;
-  } catch {
-    return `Request failed (${res.status}).`;
-  }
+/** Align length defensively: keep originals for any bullet the model dropped. */
+function alignLength(improved: string[], originals: string[]): string[] {
+  if (improved.length === originals.length) return improved;
+  return originals.map((b, i) => improved[i] ?? b);
 }
 
-/** Rewrite each bullet. Returns improved bullets aligned 1:1 with the input. */
-export async function improveBullets(
+// ── Anthropic ──────────────────────────────────────────────────────────────
+
+async function improveWithAnthropic(
   bullets: string[],
   context: string,
-  { apiKey, model }: ImproveOptions,
+  { apiKey, model }: { apiKey: string; model: string },
 ): Promise<string[]> {
-  const userPrompt = `${context ? `Context: ${context}\n\n` : ""}Improve these ${bullets.length} resume bullet point(s). Return a JSON array of exactly ${bullets.length} string(s).\n\n${bullets
-    .map((b, i) => `${i + 1}. ${b}`)
-    .join("\n")}`;
-
-  const res = await fetch(ANTHROPIC_URL, {
+  const res = await fetch("https://api.anthropic.com/v1/messages", {
     method: "POST",
     headers: {
       "x-api-key": apiKey,
@@ -81,16 +60,148 @@ export async function improveBullets(
       model,
       max_tokens: 1024,
       system: SYSTEM_PROMPT,
-      messages: [{ role: "user", content: userPrompt }],
+      messages: [{ role: "user", content: buildUserPrompt(bullets, context) }],
     }),
   });
 
-  if (!res.ok) throw new Error(await errorMessage(res));
+  if (!res.ok) throw new Error(await anthropicError(res));
 
-  const improved = parseJsonArray(extractText(await res.json()));
+  const data: unknown = await res.json();
+  const content = (data as { content?: { type: string; text?: string }[] }).content;
+  const text = Array.isArray(content)
+    ? content.map((b) => b.text ?? "").join("")
+    : "";
+
+  const improved = parseJsonArray(text);
   if (!improved) throw new Error("Could not read the AI response. Please retry.");
+  return alignLength(improved, bullets);
+}
 
-  // Align length defensively: keep originals for any the model dropped.
-  if (improved.length === bullets.length) return improved;
-  return bullets.map((b, i) => improved[i] ?? b);
+async function anthropicError(res: Response): Promise<string> {
+  if (res.status === 401) return "Invalid API key — check it in AI settings.";
+  if (res.status === 429) return "Rate limited by Anthropic — try again shortly.";
+  try {
+    const body: unknown = await res.json();
+    const msg = (body as { error?: { message?: string } })?.error?.message;
+    return msg ? `Anthropic: ${msg}` : `Anthropic request failed (${res.status}).`;
+  } catch { return `Anthropic request failed (${res.status}).`; }
+}
+
+// ── OpenAI ─────────────────────────────────────────────────────────────────
+
+async function improveWithOpenAI(
+  bullets: string[],
+  context: string,
+  { apiKey, model }: { apiKey: string; model: string },
+): Promise<string[]> {
+  const res = await fetch("https://api.openai.com/v1/chat/completions", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${apiKey}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      model,
+      max_tokens: 1024,
+      messages: [
+        { role: "system", content: SYSTEM_PROMPT },
+        { role: "user",   content: buildUserPrompt(bullets, context) },
+      ],
+    }),
+  });
+
+  if (!res.ok) throw new Error(await openaiError(res));
+
+  const data: unknown = await res.json();
+  const text: string =
+    (data as { choices?: { message?: { content?: string } }[] })
+      .choices?.[0]?.message?.content ?? "";
+
+  const improved = parseJsonArray(text);
+  if (!improved) throw new Error("Could not read the AI response. Please retry.");
+  return alignLength(improved, bullets);
+}
+
+async function openaiError(res: Response): Promise<string> {
+  if (res.status === 401) return "Invalid API key — check it in AI settings.";
+  if (res.status === 429) return "Rate limited by OpenAI — try again shortly.";
+  try {
+    const body: unknown = await res.json();
+    const msg = (body as { error?: { message?: string } })?.error?.message;
+    return msg ? `OpenAI: ${msg}` : `OpenAI request failed (${res.status}).`;
+  } catch { return `OpenAI request failed (${res.status}).`; }
+}
+
+// ── Google Gemini ──────────────────────────────────────────────────────────
+
+async function improveWithGemini(
+  bullets: string[],
+  context: string,
+  { apiKey, model }: { apiKey: string; model: string },
+): Promise<string[]> {
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
+
+  const res = await fetch(url, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      system_instruction: {
+        parts: [{ text: SYSTEM_PROMPT }],
+      },
+      contents: [
+        { role: "user", parts: [{ text: buildUserPrompt(bullets, context) }] },
+      ],
+      generationConfig: { maxOutputTokens: 1024 },
+    }),
+  });
+
+  if (!res.ok) throw new Error(await geminiError(res));
+
+  const data: unknown = await res.json();
+  const text: string =
+    (data as {
+      candidates?: { content?: { parts?: { text?: string }[] } }[];
+    }).candidates?.[0]?.content?.parts?.[0]?.text ?? "";
+
+  const improved = parseJsonArray(text);
+  if (!improved) throw new Error("Could not read the AI response. Please retry.");
+  return alignLength(improved, bullets);
+}
+
+async function geminiError(res: Response): Promise<string> {
+  if (res.status === 400) return "Bad request — check your API key or model name.";
+  if (res.status === 429) return "Rate limited by Google Gemini — try again shortly.";
+  try {
+    const body: unknown = await res.json();
+    const msg = (body as { error?: { message?: string } })?.error?.message;
+    return msg ? `Gemini: ${msg}` : `Gemini request failed (${res.status}).`;
+  } catch { return `Gemini request failed (${res.status}).`; }
+}
+
+// ── Public dispatcher ──────────────────────────────────────────────────────
+
+export interface ImproveOptions {
+  provider: AiProvider;
+  apiKey: string;
+  model: string;
+}
+
+/**
+ * Rewrite each bullet point with the chosen AI provider. Returns improved
+ * bullets aligned 1:1 with the input, defensively keeping originals for any
+ * item the model might drop.
+ */
+export async function improveBullets(
+  bullets: string[],
+  context: string,
+  { provider, apiKey, model }: ImproveOptions,
+): Promise<string[]> {
+  switch (provider) {
+    case "anthropic":
+      return improveWithAnthropic(bullets, context, { apiKey, model });
+    case "openai":
+      return improveWithOpenAI(bullets, context, { apiKey, model });
+    case "gemini":
+      return improveWithGemini(bullets, context, { apiKey, model });
+  }
 }
