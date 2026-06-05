@@ -2,42 +2,95 @@
 
 import { useEffect, useState } from "react";
 
+import { uid } from "@/lib/resume/factory";
 import { useResumeStore } from "@/lib/store";
-import { loadResume, saveResume } from "./db";
+import {
+  getActiveId,
+  listDocs,
+  loadDoc,
+  saveDoc,
+  setActiveId,
+  takeLegacyResume,
+  type SavedDoc,
+} from "./db";
 
 /**
- * Restores the saved résumé from IndexedDB on first load, then autosaves
- * (debounced) on every change. Returns `true` once hydration is complete so the
- * UI can avoid flashing the default sample before the saved data loads.
+ * Restores the active saved document from IndexedDB on first load (migrating a
+ * legacy single-document save if present), then autosaves the active document
+ * (debounced) on every change. Returns `true` once hydration is complete.
  */
 export function useResumePersistence(): boolean {
   const [hydrated, setHydrated] = useState(false);
   const resume = useResumeStore((s) => s.resume);
-  const setResume = useResumeStore((s) => s.setResume);
+  const documentId = useResumeStore((s) => s.documentId);
+  const documentName = useResumeStore((s) => s.documentName);
+  const loadDocument = useResumeStore((s) => s.loadDocument);
 
   // Hydrate once.
   useEffect(() => {
     let active = true;
-    loadResume()
-      .then((saved) => {
-        if (active && saved) setResume(saved);
-      })
-      .finally(() => {
+    (async () => {
+      try {
+        let docs = await listDocs();
+
+        // Migrate a résumé saved under the original single-document key.
+        if (docs.length === 0) {
+          const legacy = await takeLegacyResume();
+          if (legacy) {
+            const migrated: SavedDoc = {
+              id: uid(),
+              name: "My résumé",
+              updatedAt: Date.now(),
+              data: legacy,
+            };
+            await saveDoc(migrated);
+            await setActiveId(migrated.id);
+            docs = [migrated];
+          }
+        }
+
+        const activeId = await getActiveId();
+        let doc = activeId ? await loadDoc(activeId) : null;
+        if (!doc) doc = docs[0] ?? null;
+
+        // Nothing saved yet — seed a first document from the current (sample) state.
+        if (!doc) {
+          doc = {
+            id: uid(),
+            name: "My résumé",
+            updatedAt: Date.now(),
+            data: useResumeStore.getState().resume,
+          };
+          await saveDoc(doc);
+        }
+
+        if (active) {
+          loadDocument({ id: doc.id, name: doc.name, data: doc.data });
+          await setActiveId(doc.id);
+        }
+      } finally {
         if (active) setHydrated(true);
-      });
+      }
+    })();
     return () => {
       active = false;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Debounced autosave (only after hydration, so we never overwrite saved data
-  // with the initial sample before it has loaded).
+  // Debounced autosave of the active document (after hydration only).
   useEffect(() => {
-    if (!hydrated) return;
-    const handle = setTimeout(() => void saveResume(resume), 600);
+    if (!hydrated || !documentId) return;
+    const handle = setTimeout(() => {
+      void saveDoc({
+        id: documentId,
+        name: documentName,
+        updatedAt: Date.now(),
+        data: resume,
+      });
+    }, 600);
     return () => clearTimeout(handle);
-  }, [resume, hydrated]);
+  }, [resume, documentName, documentId, hydrated]);
 
   return hydrated;
 }

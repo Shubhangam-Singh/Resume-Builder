@@ -11,6 +11,7 @@ import { ThemeToggle } from "@/components/ThemeToggle";
 import { useResumePersistence } from "@/lib/persist/useResumePersistence";
 import { Editor } from "./Editor";
 import { MoreMenu } from "./MoreMenu";
+import { ResumeManager } from "./ResumeManager";
 import { SectionsMenu } from "./SectionsMenu";
 
 export function Workspace() {
@@ -53,6 +54,7 @@ export function Workspace() {
             <ShieldCheck className="h-3.5 w-3.5" />
             Runs entirely in your browser
           </span>
+          <ResumeManager />
           <ThemeToggle />
           <ImportResume />
           <AtsChecker />

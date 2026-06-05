@@ -44,6 +44,12 @@ const emptyFactories: { [K in ArraySectionKey]: () => SectionElement[K] } = {
 interface ResumeStore {
   resume: ResumeData;
 
+  // active saved-document identity (for multiple résumés)
+  documentId: string;
+  documentName: string;
+  loadDocument: (doc: { id: string; name: string; data: ResumeData }) => void;
+  setDocumentName: (name: string) => void;
+
   // basics
   updateBasics: (patch: Partial<Basics>) => void;
   updateLocation: (patch: Partial<Location>) => void;
@@ -85,6 +91,12 @@ export const useResumeStore = create<ResumeStore>((set) => {
 
   return {
     resume: sampleResume(),
+    documentId: "",
+    documentName: "My résumé",
+
+    loadDocument: (doc) =>
+      set({ resume: doc.data, documentId: doc.id, documentName: doc.name }),
+    setDocumentName: (name) => set({ documentName: name }),
 
     updateBasics: (patch) =>
       mutate((r) => {
