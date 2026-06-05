@@ -99,8 +99,15 @@ export interface ResumeMeta {
   sectionOrder?: HideableSection[];
   /** Accent color id (see theme.ts ACCENTS). Absent = template default. */
   themeColor?: string;
-  /** Layout density. Absent = "standard". */
+  /** Layout density preset. Absent = "standard". Quick-sets the spacing below. */
   density?: "compact" | "standard" | "loose";
+  /** Font family id (see theme.ts FONTS). Absent = "helvetica". */
+  fontFamily?: string;
+  /** Fine-grained formatting multipliers (override the density preset). */
+  fontScale?: number;
+  lineSpacing?: number;
+  sectionSpacing?: number;
+  paragraphSpacing?: number;
 }
 
 export interface ResumeData {

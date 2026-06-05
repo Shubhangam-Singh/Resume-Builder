@@ -25,7 +25,7 @@ export function Workspace() {
         role="status"
       >
         <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-        Loading your résumé…
+        Loading your resume…
       </div>
     );
   }

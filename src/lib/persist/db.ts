@@ -3,7 +3,7 @@ import { openDB, type IDBPDatabase } from "idb";
 import type { ResumeData } from "@/lib/resume/types";
 
 /**
- * IndexedDB persistence for autosaving résumés. Supports multiple documents,
+ * IndexedDB persistence for autosaving resumes. Supports multiple documents,
  * each stored under a `doc:<id>` key, with the active document id under
  * `active-id`. Everything stays on the device — local persistence, not sync.
  */
@@ -106,7 +106,7 @@ export async function setActiveId(id: string): Promise<void> {
   }
 }
 
-/** Read (and clear) a résumé saved under the original single-document key. */
+/** Read (and clear) a resume saved under the original single-document key. */
 export async function takeLegacyResume(): Promise<ResumeData | null> {
   try {
     const db = await getDb();

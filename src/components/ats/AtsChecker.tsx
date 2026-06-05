@@ -131,7 +131,7 @@ export function AtsChecker() {
         {/* Self-check */}
         <section className="space-y-3">
           <div className="flex items-center justify-between">
-            <h3 className="text-sm font-semibold">Can an ATS read your résumé?</h3>
+            <h3 className="text-sm font-semibold">Can an ATS read your resume?</h3>
             {status === "done" && (
               <Button variant="ghost" size="sm" onClick={() => runSelfCheck()}>
                 Re-run
@@ -196,7 +196,7 @@ export function AtsChecker() {
         <section className="space-y-3 border-t pt-4">
           <h3 className="text-sm font-semibold">Match a job description</h3>
           <p className="text-xs text-muted-foreground">
-            Paste a job post to see which of its keywords your résumé already
+            Paste a job post to see which of its keywords your resume already
             covers.
           </p>
           <Textarea

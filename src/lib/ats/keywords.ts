@@ -5,10 +5,10 @@ import { matchKnownSkills } from "@/lib/parser/skills";
  *   1. Known skills from the taxonomy mentioned in the JD (high signal).
  *   2. The most frequent meaningful words in the JD (catches role/domain terms
  *      the taxonomy doesn't know, e.g. "stakeholder", "roadmap").
- * Each keyword is then checked for presence in the résumé text.
+ * Each keyword is then checked for presence in the resume text.
  */
 
-// Common English + résumé/JD boilerplate to exclude from keyword extraction.
+// Common English + resume/JD boilerplate to exclude from keyword extraction.
 const STOPWORDS = new Set([
   "the", "and", "for", "you", "your", "our", "with", "will", "are", "this",
   "that", "have", "has", "from", "they", "their", "them", "but", "not", "all",
@@ -94,7 +94,7 @@ export interface CoverageResult {
   coverage: number; // 0–100
 }
 
-/** Compare JD keywords against the résumé text. */
+/** Compare JD keywords against the resume text. */
 export function analyzeCoverage(jd: string, resumeText: string): CoverageResult {
   const keywords = extractKeywords(jd);
   const hay = resumeText.toLowerCase();

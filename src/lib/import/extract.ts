@@ -25,7 +25,7 @@ export function detectKind(file: File): SupportedKind | null {
 
 export class UnsupportedFileError extends Error {
   constructor() {
-    super("Unsupported file. Please upload a PDF, DOCX, or TXT résumé.");
+    super("Unsupported file. Please upload a PDF, DOCX, or TXT resume.");
     this.name = "UnsupportedFileError";
   }
 }

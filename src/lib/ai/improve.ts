@@ -6,7 +6,7 @@
 
 const ANTHROPIC_URL = "https://api.anthropic.com/v1/messages";
 
-const SYSTEM_PROMPT = `You are an expert résumé editor. Rewrite each bullet point to be concise, results-oriented, and ATS-friendly:
+const SYSTEM_PROMPT = `You are an expert resume editor. Rewrite each bullet point to be concise, results-oriented, and ATS-friendly:
 - Start with a strong past-tense action verb and cut filler words.
 - Keep each bullet to a single line.
 - Where a metric would strengthen the point but none is provided, add a bracketed placeholder like "[X%]", "[$Y]", or "[N]" instead of inventing a number.
@@ -65,7 +65,7 @@ export async function improveBullets(
   context: string,
   { apiKey, model }: ImproveOptions,
 ): Promise<string[]> {
-  const userPrompt = `${context ? `Context: ${context}\n\n` : ""}Improve these ${bullets.length} résumé bullet point(s). Return a JSON array of exactly ${bullets.length} string(s).\n\n${bullets
+  const userPrompt = `${context ? `Context: ${context}\n\n` : ""}Improve these ${bullets.length} resume bullet point(s). Return a JSON array of exactly ${bullets.length} string(s).\n\n${bullets
     .map((b, i) => `${i + 1}. ${b}`)
     .join("\n")}`;
 

@@ -2,7 +2,7 @@ import { emptyResume, uid } from "@/lib/resume/factory";
 import type { HideableSection, ResumeData } from "@/lib/resume/types";
 
 /**
- * Export / import the résumé as JSON. Internal `id` fields are stripped on
+ * Export / import the resume as JSON. Internal `id` fields are stripped on
  * export for cleaner, JSON Resume-friendly output, and regenerated on import.
  * Import is tolerant: it coerces our own export *or* a standard JSON Resume file
  * (or a partial one) into a valid ResumeData, filling missing fields.
@@ -157,6 +157,8 @@ function coerceResume(raw: unknown): ResumeData {
 
   const meta = obj(root.meta);
   const density = str(meta.density);
+  const num = (v: unknown): number | undefined =>
+    typeof v === "number" && Number.isFinite(v) ? v : undefined;
   out.meta = {
     template: str(meta.template) || out.meta.template,
     lastModified: new Date().toISOString(),
@@ -171,6 +173,11 @@ function coerceResume(raw: unknown): ResumeData {
       density === "compact" || density === "standard" || density === "loose"
         ? density
         : undefined,
+    fontFamily: str(meta.fontFamily) || undefined,
+    fontScale: num(meta.fontScale),
+    lineSpacing: num(meta.lineSpacing),
+    sectionSpacing: num(meta.sectionSpacing),
+    paragraphSpacing: num(meta.paragraphSpacing),
   };
 
   return out;

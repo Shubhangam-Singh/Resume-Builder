@@ -35,7 +35,7 @@ ResumeForge does the opposite:
   plus **Designer** (two-column; flagged as potentially ATS-risky). Every
   template renders the same `ResumeData`, so switching never loses data.
 - ✅ One-click **Download PDF** with real, selectable, machine-readable text.
-- ✅ **Import an existing résumé** (PDF / DOCX / TXT). The file is read in your
+- ✅ **Import an existing resume** (PDF / DOCX / TXT). The file is read in your
   browser, parsed into structured fields, and shown in a "Review what we
   imported" step before anything is applied — nothing is committed silently.
 - ✅ **ATS check** — a self-check that renders your real PDF, reads the text
@@ -47,8 +47,8 @@ ResumeForge does the opposite:
   entirely on-device.
 - ✅ **Export / import as JSON** (JSON Resume-friendly), **reorder and hide
   sections**, reorder entries, and a **dark mode** for the app UI (the exported
-  résumé always stays print-light).
-- ✅ **Multiple saved résumés** — keep separate versions tailored to different
+  resume always stays print-light).
+- ✅ **Multiple saved resumes** — keep separate versions tailored to different
   roles and switch between them; all stored locally.
 - ✅ **Optional AI bullet helper** — bring your own Anthropic API key (off by
   default, stored only in your browser) to rewrite bullet points. The core flow
@@ -58,7 +58,7 @@ ResumeForge does the opposite:
 > Coming next (see [Roadmap](#roadmap)): more templates, an ATS checker,
 > job-description keyword matching, autosave, and JSON import/export.
 
-## Importing a résumé (Phase 2)
+## Importing a resume (Phase 2)
 
 Click **Import** and drop in a `.pdf`, `.docx`, or `.txt` file. The whole
 pipeline runs locally:
@@ -89,7 +89,7 @@ and the final PDF — is computed locally in your browser. Nothing you type is
 sent over the network. You can verify this yourself: open your browser's
 network tab while editing and downloading; you'll see no requests carrying your
 resume data. You can even run it fully offline after the first load. Autosave
-keeps your résumé in your browser's own IndexedDB storage — on your device, never
+keeps your resume in your browser's own IndexedDB storage — on your device, never
 uploaded.
 
 ## Run it locally
@@ -156,7 +156,7 @@ src/
   app/                     Next.js app router (layout, page, global styles)
   components/
     editor/                The form: Workspace, Editor tabs, section editors,
-                           résumé manager, sections (reorder/hide), more menu
+                           resume manager, sections (reorder/hide), more menu
     import/                Import dropzone + "Review what we imported" dialog
     ats/                   ATS checker dialog (self-check + JD match)
     ai/                    Optional BYOK "Improve with AI" button + settings
@@ -164,7 +164,7 @@ src/
     ui/                    shadcn/ui primitives (button, input, dialog, …)
   lib/
     resume/                Canonical types, factories, formatting, section order
-    parser/                Résumé text parser (normalize, sections, name,
+    parser/                Resume text parser (normalize, sections, name,
                            contact, skills, dates, structured entries) + tests
     import/                Client-side file → text extractors (pdf, docx)
     ats/                   ATS self-check + JD keyword coverage + issue flags + tests
@@ -182,7 +182,7 @@ scripts/
 - **Phase 3 — Templates** ✅ ATS Classic / Modern / Compact / Designer + instant switching _(done)_
 - **Phase 4 — ATS checker** ✅ self-check round-trip + JD keyword coverage + issue flags _(done)_
 - **Phase 5 — Polish & portability** ✅ autosave (IndexedDB), multiple saved
-  résumés, JSON import/export, section reorder + visibility, entry reordering,
+  resumes, JSON import/export, section reorder + visibility, entry reordering,
   dark-mode app UI, a11y/responsive _(done)_
 - **Optional AI helper** ✅ bring-your-own-key bullet rewriter, off by default _(done)_
 

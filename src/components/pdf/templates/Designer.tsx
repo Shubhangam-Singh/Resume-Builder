@@ -9,7 +9,13 @@ import {
 
 import { formatDateRange, formatMonthYear } from "@/lib/resume/format";
 import { resolveSectionOrder } from "@/lib/resume/sections";
-import { makeScale, resolveAccent, type Scale } from "@/lib/resume/theme";
+import {
+  makeScale,
+  resolveAccent,
+  resolveFont,
+  type ResolvedFont,
+  type Scale,
+} from "@/lib/resume/theme";
 import type { HideableSection, ResumeData } from "@/lib/resume/types";
 import {
   contactItems,
@@ -36,10 +42,10 @@ const SIDEBAR_RULE = "#cbd5e1";
 const SIDEBAR_WIDTH = "34%";
 const DEFAULT_ACCENT = "#0e7490";
 
-function makeStyles(accent: string, sc: Scale) {
+function makeStyles(accent: string, sc: Scale, font: ResolvedFont) {
   return StyleSheet.create({
     page: {
-      fontFamily: "Helvetica",
+      fontFamily: font.regular,
       fontSize: sc.f(10),
       color: TEXT,
       lineHeight: sc.l(1.4),
@@ -63,7 +69,7 @@ function makeStyles(accent: string, sc: Scale) {
 
     name: {
       fontSize: sc.f(22),
-      fontFamily: "Helvetica-Bold",
+      fontFamily: font.bold,
       color: TEXT,
       lineHeight: sc.l(1.12),
     },
@@ -76,7 +82,7 @@ function makeStyles(accent: string, sc: Scale) {
 
     mainTitle: {
       fontSize: sc.f(11),
-      fontFamily: "Helvetica-Bold",
+      fontFamily: font.bold,
       color: accent,
       letterSpacing: 1,
       textTransform: "uppercase",
@@ -87,7 +93,7 @@ function makeStyles(accent: string, sc: Scale) {
     },
     sideTitle: {
       fontSize: sc.f(10),
-      fontFamily: "Helvetica-Bold",
+      fontFamily: font.bold,
       color: accent,
       letterSpacing: 1,
       textTransform: "uppercase",
@@ -102,7 +108,7 @@ function makeStyles(accent: string, sc: Scale) {
 
     summary: { fontSize: sc.f(10) },
 
-    sideItem: { marginBottom: sc.s(7) },
+    sideItem: { marginBottom: sc.sp(7) },
     sideLine: { fontSize: sc.f(9), marginBottom: sc.s(2) },
     sideLink: {
       fontSize: sc.f(9),
@@ -110,17 +116,17 @@ function makeStyles(accent: string, sc: Scale) {
       textDecoration: "none",
       marginBottom: sc.s(2),
     },
-    sideItemTitle: { fontSize: sc.f(9.5), fontFamily: "Helvetica-Bold" },
+    sideItemTitle: { fontSize: sc.f(9.5), fontFamily: font.bold },
     sideItemText: { fontSize: sc.f(9), color: MUTED },
     sideItemMeta: { fontSize: sc.f(8.5), color: MUTED },
 
-    entry: { marginBottom: sc.s(9) },
+    entry: { marginBottom: sc.sp(9) },
     entryHeaderRow: {
       flexDirection: "row",
       justifyContent: "space-between",
       alignItems: "flex-start",
     },
-    entryTitle: { fontSize: sc.f(10.5), fontFamily: "Helvetica-Bold" },
+    entryTitle: { fontSize: sc.f(10.5), fontFamily: font.bold },
     entrySubtitle: { fontSize: sc.f(10), color: MUTED },
     entryMeta: {
       fontSize: sc.f(9),
@@ -131,7 +137,7 @@ function makeStyles(accent: string, sc: Scale) {
     },
     entrySummary: { fontSize: sc.f(10), marginTop: sc.s(2) },
 
-    bulletRow: { flexDirection: "row", marginTop: sc.s(2), paddingRight: sc.s(4) },
+    bulletRow: { flexDirection: "row", marginTop: sc.sp(2), paddingRight: sc.s(4) },
     bulletGlyph: { width: sc.s(11), color: accent, fontSize: sc.f(10) },
     bulletText: { flex: 1, fontSize: sc.f(10) },
   });
@@ -153,7 +159,8 @@ export function Designer({ data }: { data: ResumeData }) {
   const has = sectionPresence(data);
   const items = contactItems(basics);
   const accent = resolveAccent(data.meta.themeColor, DEFAULT_ACCENT);
-  const styles = makeStyles(accent, makeScale(data.meta.density));
+  const font = resolveFont(data.meta.fontFamily);
+  const styles = makeStyles(accent, makeScale(data.meta), font);
   const order = resolveSectionOrder(data.meta);
   const sidebarOrder = order.filter((k) => SIDEBAR_SECTIONS.has(k));
   const mainOrder = order.filter((k) => !SIDEBAR_SECTIONS.has(k));
@@ -294,7 +301,7 @@ export function Designer({ data }: { data: ResumeData }) {
 
   return (
     <Document
-      title={basics.name ? `${basics.name} — Résumé` : "Résumé"}
+      title={basics.name ? `${basics.name} — Resume` : "Resume"}
       author={basics.name || undefined}
     >
       <Page size="LETTER" style={styles.page}>

@@ -36,7 +36,7 @@ export function MoreMenu() {
     try {
       setResume(parseResumeJson(await file.text()));
     } catch {
-      alert("That doesn't look like a valid résumé JSON file.");
+      alert("That doesn't look like a valid resume JSON file.");
     }
   }
 
@@ -67,7 +67,7 @@ export function MoreMenu() {
           <DropdownMenuItem
             onSelect={() =>
               confirmThen(
-                "Replace the current résumé with the sample content?",
+                "Replace the current resume with the sample content?",
                 loadSample,
               )
             }
@@ -78,7 +78,7 @@ export function MoreMenu() {
           <DropdownMenuItem
             onSelect={() =>
               confirmThen(
-                "Clear all fields and start from a blank résumé? This can't be undone.",
+                "Clear all fields and start from a blank resume? This can't be undone.",
                 resetResume,
               )
             }

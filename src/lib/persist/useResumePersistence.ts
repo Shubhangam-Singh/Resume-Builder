@@ -33,13 +33,13 @@ export function useResumePersistence(): boolean {
       try {
         let docs = await listDocs();
 
-        // Migrate a résumé saved under the original single-document key.
+        // Migrate a resume saved under the original single-document key.
         if (docs.length === 0) {
           const legacy = await takeLegacyResume();
           if (legacy) {
             const migrated: SavedDoc = {
               id: uid(),
-              name: "My résumé",
+              name: "My resume",
               updatedAt: Date.now(),
               data: legacy,
             };
@@ -57,7 +57,7 @@ export function useResumePersistence(): boolean {
         if (!doc) {
           doc = {
             id: uid(),
-            name: "My résumé",
+            name: "My resume",
             updatedAt: Date.now(),
             data: useResumeStore.getState().resume,
           };

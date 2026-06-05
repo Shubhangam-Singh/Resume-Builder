@@ -11,6 +11,7 @@ import {
   sampleResume,
 } from "./resume/factory";
 import { resolveSectionOrder } from "./resume/sections";
+import { DENSITY_PRESETS } from "./resume/theme";
 import type {
   ArraySectionKey,
   Basics,
@@ -45,7 +46,7 @@ const emptyFactories: { [K in ArraySectionKey]: () => SectionElement[K] } = {
 interface ResumeStore {
   resume: ResumeData;
 
-  // active saved-document identity (for multiple résumés)
+  // active saved-document identity (for multiple resumes)
   documentId: string;
   documentName: string;
   loadDocument: (doc: { id: string; name: string; data: ResumeData }) => void;
@@ -76,6 +77,11 @@ interface ResumeStore {
   moveSection: (section: HideableSection, dir: -1 | 1) => void;
   setThemeColor: (color: string | undefined) => void;
   setDensity: (density: "compact" | "standard" | "loose") => void;
+  setFontFamily: (fontFamily: string) => void;
+  setFontScale: (value: number) => void;
+  setLineSpacing: (value: number) => void;
+  setSectionSpacing: (value: number) => void;
+  setParagraphSpacing: (value: number) => void;
 
   // whole-document
   setResume: (resume: ResumeData) => void;
@@ -96,7 +102,7 @@ export const useResumeStore = create<ResumeStore>((set) => {
   return {
     resume: sampleResume(),
     documentId: "",
-    documentName: "My résumé",
+    documentName: "My resume",
 
     loadDocument: (doc) =>
       set({ resume: doc.data, documentId: doc.id, documentName: doc.name }),
@@ -170,6 +176,40 @@ export const useResumeStore = create<ResumeStore>((set) => {
     setDensity: (density) =>
       mutate((r) => {
         r.meta.density = density;
+        const p = DENSITY_PRESETS[density];
+        r.meta.fontScale = p.fontScale;
+        r.meta.lineSpacing = p.lineSpacing;
+        r.meta.sectionSpacing = p.sectionSpacing;
+        r.meta.paragraphSpacing = p.paragraphSpacing;
+      }),
+
+    setFontFamily: (fontFamily) =>
+      mutate((r) => {
+        r.meta.fontFamily = fontFamily;
+      }),
+
+    setFontScale: (value) =>
+      mutate((r) => {
+        r.meta.fontScale = value;
+      }),
+
+    // Moving a spacing slider switches the density preset to "custom" (cleared).
+    setLineSpacing: (value) =>
+      mutate((r) => {
+        r.meta.lineSpacing = value;
+        r.meta.density = undefined;
+      }),
+
+    setSectionSpacing: (value) =>
+      mutate((r) => {
+        r.meta.sectionSpacing = value;
+        r.meta.density = undefined;
+      }),
+
+    setParagraphSpacing: (value) =>
+      mutate((r) => {
+        r.meta.paragraphSpacing = value;
+        r.meta.density = undefined;
       }),
 
     toggleSection: (section) =>

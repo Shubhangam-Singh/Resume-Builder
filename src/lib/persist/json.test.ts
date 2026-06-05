@@ -49,7 +49,7 @@ describe("JSON export/import round-trip", () => {
     expect(r.certificates[0].name).toBe("AWS"); // certifications -> certificates
   });
 
-  it("returns a safe empty résumé for unrelated JSON, and throws on invalid JSON", () => {
+  it("returns a safe empty resume for unrelated JSON, and throws on invalid JSON", () => {
     const r = parseResumeJson("{}");
     expect(r.basics.name).toBe("");
     expect(r.work).toEqual([]);

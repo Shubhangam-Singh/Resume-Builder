@@ -86,7 +86,7 @@ export function ImportResume() {
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>
-        <Button variant="outline" size="sm" aria-label="Import résumé">
+        <Button variant="outline" size="sm" aria-label="Import resume">
           <Upload />
           <span className="hidden sm:inline">Import</span>
         </Button>
@@ -94,7 +94,7 @@ export function ImportResume() {
 
       <DialogContent className="max-w-md">
         <DialogHeader>
-          <DialogTitle>Import an existing résumé</DialogTitle>
+          <DialogTitle>Import an existing resume</DialogTitle>
           <DialogDescription>
             PDF, DOCX, or TXT. Everything is read in your browser — your file is
             never uploaded anywhere.
@@ -158,7 +158,7 @@ export function ImportResume() {
               Choose another
             </Button>
             <Button onClick={applyImport}>
-              {result.isEmpty ? "Use anyway" : "Use this résumé"}
+              {result.isEmpty ? "Use anyway" : "Use this resume"}
             </Button>
           </DialogFooter>
         )}
@@ -202,7 +202,7 @@ function Dropzone({
       <Upload className="h-8 w-8 text-muted-foreground" />
       <div>
         <p className="text-sm font-medium">
-          Drop your résumé here, or click to browse
+          Drop your resume here, or click to browse
         </p>
         <p className="mt-1 text-xs text-muted-foreground">PDF, DOCX or TXT</p>
       </div>

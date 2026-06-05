@@ -18,12 +18,18 @@ import { buildResumeDocument } from "./ResumeDocument";
  * typing stays smooth.
  */
 function structureKey(data: ResumeData): string {
+  const m = data.meta;
   return [
-    data.meta.template,
-    resolveSectionOrder(data.meta).join(","),
-    (data.meta.hiddenSections ?? []).join(","),
-    data.meta.themeColor ?? "",
-    data.meta.density ?? "standard",
+    m.template,
+    resolveSectionOrder(m).join(","),
+    (m.hiddenSections ?? []).join(","),
+    m.themeColor ?? "",
+    m.density ?? "",
+    m.fontFamily ?? "",
+    m.fontScale ?? "",
+    m.lineSpacing ?? "",
+    m.sectionSpacing ?? "",
+    m.paragraphSpacing ?? "",
   ].join("|");
 }
 

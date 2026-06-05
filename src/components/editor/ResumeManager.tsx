@@ -78,7 +78,7 @@ export function ResumeManager() {
   }
 
   async function createNew() {
-    const name = window.prompt("Name this résumé", "My résumé");
+    const name = window.prompt("Name this resume", "My resume");
     if (name === null) return;
     await persistCurrent();
     const doc: SavedDoc = {
@@ -108,7 +108,7 @@ export function ResumeManager() {
   }
 
   async function rename(doc: SavedDoc) {
-    const name = window.prompt("Rename résumé", doc.name);
+    const name = window.prompt("Rename resume", doc.name);
     if (name === null) return;
     const trimmed = name.trim() || "Untitled";
     if (doc.id === documentId) setDocumentName(trimmed);
@@ -127,7 +127,7 @@ export function ResumeManager() {
       } else {
         const fresh: SavedDoc = {
           id: uid(),
-          name: "My résumé",
+          name: "My resume",
           updatedAt: Date.now(),
           data: emptyResume(),
         };
@@ -142,7 +142,7 @@ export function ResumeManager() {
   return (
     <Dialog open={open} onOpenChange={handleOpen}>
       <DialogTrigger asChild>
-        <Button variant="ghost" size="sm" aria-label="Manage résumés">
+        <Button variant="ghost" size="sm" aria-label="Manage resumes">
           <Files />
           <span className="hidden max-w-[12ch] truncate sm:inline">
             {documentName}
@@ -152,10 +152,10 @@ export function ResumeManager() {
 
       <DialogContent className="max-w-md">
         <DialogHeader>
-          <DialogTitle>Your résumés</DialogTitle>
+          <DialogTitle>Your resumes</DialogTitle>
           <DialogDescription>
             All saved in your browser. Switch between versions, or keep separate
-            résumés tailored to different roles.
+            resumes tailored to different roles.
           </DialogDescription>
         </DialogHeader>
 
@@ -214,7 +214,7 @@ export function ResumeManager() {
         <div className="flex gap-2">
           <Button variant="outline" className="flex-1" onClick={createNew}>
             <Plus />
-            New résumé
+            New resume
           </Button>
           <Button variant="outline" className="flex-1" onClick={duplicate}>
             <Copy />

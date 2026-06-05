@@ -13,7 +13,13 @@ import {
   formatMonthYear,
 } from "@/lib/resume/format";
 import { resolveSectionOrder } from "@/lib/resume/sections";
-import { makeScale, resolveAccent, type Scale } from "@/lib/resume/theme";
+import {
+  makeScale,
+  resolveAccent,
+  resolveFont,
+  type ResolvedFont,
+  type Scale,
+} from "@/lib/resume/theme";
 import type { HideableSection, ResumeData } from "@/lib/resume/types";
 import { sectionPresence } from "./shared";
 
@@ -31,13 +37,13 @@ const MUTED = "#444444";
 const RULE = "#999999";
 const DEFAULT_ACCENT = "#1f2937";
 
-function makeStyles(accent: string, sc: Scale) {
+function makeStyles(accent: string, sc: Scale, font: ResolvedFont) {
   return StyleSheet.create({
     page: {
       paddingTop: sc.s(40),
       paddingBottom: sc.s(44),
       paddingHorizontal: sc.s(48),
-      fontFamily: "Helvetica",
+      fontFamily: font.regular,
       fontSize: sc.f(10),
       color: TEXT,
       lineHeight: sc.l(1.4),
@@ -46,7 +52,7 @@ function makeStyles(accent: string, sc: Scale) {
     header: { marginBottom: sc.s(12), textAlign: "center" },
     name: {
       fontSize: sc.f(20),
-      fontFamily: "Helvetica-Bold",
+      fontFamily: font.bold,
       letterSpacing: 0.5,
       lineHeight: sc.l(1.2),
       marginBottom: sc.s(3),
@@ -69,7 +75,7 @@ function makeStyles(accent: string, sc: Scale) {
     section: { marginTop: sc.s(12) },
     sectionTitle: {
       fontSize: sc.f(11),
-      fontFamily: "Helvetica-Bold",
+      fontFamily: font.bold,
       color: accent,
       letterSpacing: 1,
       textTransform: "uppercase",
@@ -81,13 +87,13 @@ function makeStyles(accent: string, sc: Scale) {
 
     summary: { fontSize: sc.f(10), color: TEXT },
 
-    entry: { marginBottom: sc.s(8) },
+    entry: { marginBottom: sc.sp(8) },
     entryHeaderRow: {
       flexDirection: "row",
       justifyContent: "space-between",
       alignItems: "flex-start",
     },
-    entryTitle: { fontSize: sc.f(10.5), fontFamily: "Helvetica-Bold" },
+    entryTitle: { fontSize: sc.f(10.5), fontFamily: font.bold },
     entrySubtitle: { fontSize: sc.f(10), color: MUTED },
     entryMeta: {
       fontSize: sc.f(9.5),
@@ -98,12 +104,12 @@ function makeStyles(accent: string, sc: Scale) {
     },
     entrySummary: { fontSize: sc.f(10), marginTop: sc.s(2) },
 
-    bulletRow: { flexDirection: "row", marginTop: sc.s(2), paddingRight: sc.s(4) },
+    bulletRow: { flexDirection: "row", marginTop: sc.sp(2), paddingRight: sc.s(4) },
     bulletGlyph: { width: sc.s(12), fontSize: sc.f(10), color: accent },
     bulletText: { flex: 1, fontSize: sc.f(10) },
 
     skillRow: { flexDirection: "row", marginBottom: sc.s(3) },
-    skillCategory: { fontFamily: "Helvetica-Bold", fontSize: sc.f(10) },
+    skillCategory: { fontFamily: font.bold, fontSize: sc.f(10) },
     skillKeywords: { flex: 1, fontSize: sc.f(10) },
   });
 }
@@ -138,7 +144,8 @@ export function AtsClassic({ data }: { data: ResumeData }) {
   const locationText = formatLocation(basics.location);
   const has = sectionPresence(data);
   const accent = resolveAccent(data.meta.themeColor, DEFAULT_ACCENT);
-  const styles = makeStyles(accent, makeScale(data.meta.density));
+  const font = resolveFont(data.meta.fontFamily);
+  const styles = makeStyles(accent, makeScale(data.meta), font);
 
   const contactNodes: React.ReactNode[] = [];
   if (basics.email)
@@ -322,7 +329,7 @@ export function AtsClassic({ data }: { data: ResumeData }) {
 
   return (
     <Document
-      title={basics.name ? `${basics.name} — Résumé` : "Résumé"}
+      title={basics.name ? `${basics.name} — Resume` : "Resume"}
       author={basics.name || undefined}
     >
       <Page size="LETTER" style={styles.page}>

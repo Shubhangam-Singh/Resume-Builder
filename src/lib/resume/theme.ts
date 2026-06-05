@@ -1,8 +1,9 @@
 /**
- * Accent colors + layout density for the résumé templates. Stored in
- * `resume.meta` (themeColor / density) and resolved here into concrete values
- * the templates apply to section titles, links, borders, fonts and spacing.
+ * Accent colors, fonts, and layout density for the resume templates. Stored in
+ * `resume.meta` and resolved here into concrete values (colors, font family,
+ * and scaling functions) the templates apply.
  */
+import type { ResumeMeta } from "./types";
 
 export interface AccentOption {
   id: string;
@@ -21,11 +22,45 @@ export const ACCENTS: AccentOption[] = [
   { id: "coral", label: "Coral", hex: "#e11d48" },
 ];
 
-/** Resolve a stored accent id to a hex, falling back to a template default. */
 export function resolveAccent(id: string | undefined, fallback: string): string {
   if (!id) return fallback;
   return ACCENTS.find((a) => a.id === id)?.hex ?? fallback;
 }
+
+// ---- Fonts ----------------------------------------------------------------
+// Only the standard PDF fonts (no embedding, no network, ATS-safe).
+
+export interface FontOption {
+  id: string;
+  label: string;
+  regular: string;
+  bold: string;
+}
+
+export const FONTS: FontOption[] = [
+  { id: "helvetica", label: "Helvetica (Sans-serif)", regular: "Helvetica", bold: "Helvetica-Bold" },
+  { id: "times", label: "Times (Serif)", regular: "Times-Roman", bold: "Times-Bold" },
+  { id: "courier", label: "Courier (Monospace)", regular: "Courier", bold: "Courier-Bold" },
+];
+
+export interface ResolvedFont {
+  regular: string;
+  bold: string;
+}
+
+export function resolveFont(id: string | undefined): ResolvedFont {
+  return FONTS.find((f) => f.id === id) ?? FONTS[0];
+}
+
+// ---- Font size tiers (Small / Normal / Large) -----------------------------
+
+export const FONT_SIZES: { id: string; label: string; scale: number }[] = [
+  { id: "small", label: "Small", scale: 0.92 },
+  { id: "normal", label: "Normal", scale: 1 },
+  { id: "large", label: "Large", scale: 1.1 },
+];
+
+// ---- Density presets (quick-set the spacing sliders) ----------------------
 
 export type Density = "compact" | "standard" | "loose";
 
@@ -35,34 +70,54 @@ export const DENSITIES: { id: Density; label: string }[] = [
   { id: "loose", label: "Loose" },
 ];
 
-interface DensityScale {
-  font: number; // multiplies every font size
-  space: number; // multiplies margins / padding
-  line: number; // multiplies line heights
+interface Preset {
+  fontScale: number;
+  lineSpacing: number;
+  sectionSpacing: number;
+  paragraphSpacing: number;
 }
 
-const DENSITY_SCALE: Record<Density, DensityScale> = {
-  compact: { font: 0.9, space: 0.76, line: 0.94 },
-  standard: { font: 1, space: 1, line: 1 },
-  loose: { font: 1.06, space: 1.26, line: 1.07 },
+export const DENSITY_PRESETS: Record<Density, Preset> = {
+  compact: { fontScale: 0.92, lineSpacing: 0.92, sectionSpacing: 0.78, paragraphSpacing: 0.82 },
+  standard: { fontScale: 1, lineSpacing: 1, sectionSpacing: 1, paragraphSpacing: 1 },
+  loose: { fontScale: 1.06, lineSpacing: 1.08, sectionSpacing: 1.25, paragraphSpacing: 1.22 },
 };
 
+/** Slider ranges (min / max) for the manual spacing controls. */
+export const SPACING_RANGE = { min: 0.6, max: 1.5 } as const;
+export const LINE_RANGE = { min: 0.85, max: 1.5 } as const;
+
+// ---- Scaling --------------------------------------------------------------
+
 export interface Scale {
-  /** font size */
+  /** font size (font-size tier) */
   f: (n: number) => number;
-  /** spacing (margin / padding) */
-  s: (n: number) => number;
-  /** line height */
+  /** line height (line-spacing slider) */
   l: (n: number) => number;
+  /** section-level + general spacing (section-spacing slider) */
+  s: (n: number) => number;
+  /** paragraph/entry spacing (paragraph-spacing slider) */
+  sp: (n: number) => number;
 }
 
-/** Build the scaling functions a template applies to its base style values. */
-export function makeScale(density: Density | undefined): Scale {
-  const d = DENSITY_SCALE[density ?? "standard"];
+const clamp = (n: number, lo: number, hi: number) =>
+  Math.min(hi, Math.max(lo, n));
+
+/**
+ * Build the scaling functions from `meta`. Each granular field overrides the
+ * active density preset, so old (density-only) resumes still scale sensibly.
+ */
+export function makeScale(meta: ResumeMeta): Scale {
+  const preset = DENSITY_PRESETS[meta.density ?? "standard"] ?? DENSITY_PRESETS.standard;
+  const fontScale = clamp(meta.fontScale ?? preset.fontScale, 0.8, 1.25);
+  const line = clamp(meta.lineSpacing ?? preset.lineSpacing, LINE_RANGE.min, LINE_RANGE.max);
+  const section = clamp(meta.sectionSpacing ?? preset.sectionSpacing, SPACING_RANGE.min, SPACING_RANGE.max);
+  const para = clamp(meta.paragraphSpacing ?? preset.paragraphSpacing, SPACING_RANGE.min, SPACING_RANGE.max);
   const round = (n: number, p = 10) => Math.round(n * p) / p;
   return {
-    f: (n) => round(n * d.font),
-    s: (n) => round(n * d.space),
-    l: (n) => round(n * d.line, 100),
+    f: (n) => round(n * fontScale),
+    l: (n) => round(n * line, 100),
+    s: (n) => round(n * section),
+    sp: (n) => round(n * para),
   };
 }
