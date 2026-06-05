@@ -33,6 +33,7 @@ export function ImportResume() {
   const [status, setStatus] = useState<Status>("idle");
   const [fileName, setFileName] = useState("");
   const [result, setResult] = useState<ParseResult | null>(null);
+  const [extractedText, setExtractedText] = useState("");
   const [error, setError] = useState("");
   const [dragging, setDragging] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -41,6 +42,7 @@ export function ImportResume() {
     setStatus("idle");
     setFileName("");
     setResult(null);
+    setExtractedText("");
     setError("");
     setDragging(false);
   }
@@ -57,6 +59,7 @@ export function ImportResume() {
     setError("");
     try {
       const text = await extractText(file);
+      setExtractedText(text);
       setResult(parseResumeText(text));
       setStatus("review");
     } catch (err) {
@@ -128,6 +131,17 @@ export function ImportResume() {
 
         {status === "review" && result && (
           <ReviewPanel result={result} onChooseAnother={reset} />
+        )}
+
+        {status === "review" && (
+          <details className="rounded-md border bg-muted/30 p-2">
+            <summary className="cursor-pointer text-xs text-muted-foreground">
+              View extracted text ({extractedText.length} characters)
+            </summary>
+            <pre className="mt-2 max-h-44 overflow-auto whitespace-pre-wrap break-words text-[11px] leading-snug text-muted-foreground">
+              {extractedText || "(no text could be extracted)"}
+            </pre>
+          </details>
         )}
 
         <input
