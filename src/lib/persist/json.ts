@@ -86,6 +86,7 @@ function coerceResume(raw: unknown): ResumeData {
       countryCode: str(loc.countryCode),
     },
     summary: str(b.summary),
+    image: str(b.image),
     profiles: list(b.profiles).map((p) => {
       const o = obj(p);
       return {

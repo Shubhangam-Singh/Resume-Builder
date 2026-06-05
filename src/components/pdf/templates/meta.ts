@@ -12,6 +12,8 @@ export interface TemplateMeta {
   description: string;
   /** True for single-column, ATS-safe layouts. */
   atsSafe: boolean;
+  /** True if the template renders a profile photo. */
+  supportsPhoto?: boolean;
 }
 
 export const TEMPLATES: TemplateMeta[] = [
@@ -39,6 +41,22 @@ export const TEMPLATES: TemplateMeta[] = [
     description:
       "Two-column with a tinted sidebar. Best for human reviewers; may reduce ATS compatibility.",
     atsSafe: false,
+  },
+  {
+    id: "sidebar",
+    name: "Sidebar",
+    description:
+      "Profile-card left column with a photo, beside a main column. Photo; may reduce ATS compatibility.",
+    atsSafe: false,
+    supportsPhoto: true,
+  },
+  {
+    id: "banner",
+    name: "Banner",
+    description:
+      "Bold accent header band with a photo and chip section labels. Photo; may reduce ATS compatibility.",
+    atsSafe: false,
+    supportsPhoto: true,
   },
 ];
 

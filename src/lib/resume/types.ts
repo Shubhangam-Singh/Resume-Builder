@@ -31,6 +31,8 @@ export interface Basics {
   location: Location;
   profiles: Profile[];
   summary: string;
+  /** Optional profile photo as a data URL. Used by photo templates only. */
+  image?: string;
 }
 
 export interface WorkEntry {

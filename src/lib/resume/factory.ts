@@ -78,6 +78,7 @@ export function emptyResume(): ResumeData {
       location: { city: "", region: "", countryCode: "" },
       profiles: [],
       summary: "",
+      image: "",
     },
     work: [],
     education: [],

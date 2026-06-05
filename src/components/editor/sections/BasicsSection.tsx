@@ -1,6 +1,7 @@
 "use client";
 
 import { useResumeStore } from "@/lib/store";
+import { PhotoField } from "../PhotoField";
 import {
   AddButton,
   EntryCard,
@@ -19,6 +20,8 @@ export function BasicsSection() {
 
   return (
     <div className="space-y-4">
+      <PhotoField />
+
       <FieldRow>
         <TextField
           label="Full name"

@@ -2,9 +2,11 @@ import type { ComponentType } from "react";
 
 import type { ResumeData } from "@/lib/resume/types";
 import { AtsClassic } from "./AtsClassic";
+import { Banner } from "./Banner";
 import { Compact } from "./Compact";
 import { Designer } from "./Designer";
 import { Modern } from "./Modern";
+import { Sidebar } from "./Sidebar";
 
 /**
  * Maps a template id to its React-PDF component. This module imports
@@ -17,6 +19,8 @@ const COMPONENTS: Record<string, ComponentType<{ data: ResumeData }>> = {
   modern: Modern,
   compact: Compact,
   designer: Designer,
+  sidebar: Sidebar,
+  banner: Banner,
 };
 
 export function getTemplateComponent(
