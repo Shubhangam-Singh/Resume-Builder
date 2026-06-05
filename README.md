@@ -45,9 +45,14 @@ ResumeForge does the opposite:
   over-long lines, text-as-image).
 - ✅ **Autosave** to IndexedDB — your work is restored automatically on reload,
   entirely on-device.
-- ✅ **Export / import as JSON** (JSON Resume-friendly), **toggle section
-  visibility**, **reorder entries**, and a **dark mode** for the app UI (the
-  exported résumé always stays print-light).
+- ✅ **Export / import as JSON** (JSON Resume-friendly), **reorder and hide
+  sections**, reorder entries, and a **dark mode** for the app UI (the exported
+  résumé always stays print-light).
+- ✅ **Multiple saved résumés** — keep separate versions tailored to different
+  roles and switch between them; all stored locally.
+- ✅ **Optional AI bullet helper** — bring your own Anthropic API key (off by
+  default, stored only in your browser) to rewrite bullet points. The core flow
+  never requires it.
 - ✅ Sample content on first load, plus "Start blank" to clear everything.
 
 > Coming next (see [Roadmap](#roadmap)): more templates, an ATS checker,
@@ -150,17 +155,21 @@ perfectly in sync.
 src/
   app/                     Next.js app router (layout, page, global styles)
   components/
-    editor/                The form: Workspace, Editor tabs, section editors
+    editor/                The form: Workspace, Editor tabs, section editors,
+                           résumé manager, sections (reorder/hide), more menu
     import/                Import dropzone + "Review what we imported" dialog
     ats/                   ATS checker dialog (self-check + JD match)
+    ai/                    Optional BYOK "Improve with AI" button + settings
     pdf/                   PDF document, templates, live viewer, download, switcher
     ui/                    shadcn/ui primitives (button, input, dialog, …)
   lib/
-    resume/                Canonical types, factories, formatting helpers
+    resume/                Canonical types, factories, formatting, section order
     parser/                Résumé text parser (normalize, sections, name,
                            contact, skills, dates, structured entries) + tests
     import/                Client-side file → text extractors (pdf, docx)
     ats/                   ATS self-check + JD keyword coverage + issue flags + tests
+    persist/               IndexedDB autosave (multi-doc) + JSON import/export
+    ai/                    BYOK Anthropic client + key store (optional)
     store.ts               Zustand store (source of truth)
 scripts/
   copy-pdf-worker.mjs      Copies the pdf.js worker into public/ (predev/prebuild)
@@ -172,10 +181,10 @@ scripts/
 - **Phase 2 — Import** ✅ PDF/DOCX/TXT → parse → review → pre-filled form _(done)_
 - **Phase 3 — Templates** ✅ ATS Classic / Modern / Compact / Designer + instant switching _(done)_
 - **Phase 4 — ATS checker** ✅ self-check round-trip + JD keyword coverage + issue flags _(done)_
-- **Phase 5 — Polish & portability** ✅ autosave (IndexedDB), JSON import/export,
-  section visibility, entry reordering, dark-mode app UI, a11y/responsive _(done)_
-  - _Still open from this phase: multiple saved résumés (versions) and
-    whole-section drag-reordering._
+- **Phase 5 — Polish & portability** ✅ autosave (IndexedDB), multiple saved
+  résumés, JSON import/export, section reorder + visibility, entry reordering,
+  dark-mode app UI, a11y/responsive _(done)_
+- **Optional AI helper** ✅ bring-your-own-key bullet rewriter, off by default _(done)_
 
 ## License
 
