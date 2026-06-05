@@ -3,6 +3,7 @@
 import { useEffect, useId, useState } from "react";
 import { ChevronDown, ChevronUp, Plus, Trash2 } from "lucide-react";
 
+import { AiImproveButton } from "@/components/ai/AiImproveButton";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -121,10 +122,13 @@ export function ListField({
   placeholder,
   hint,
   rows = 4,
+  aiContext,
 }: BaseFieldProps & {
   value: string[];
   onChange: (value: string[]) => void;
   rows?: number;
+  /** When set, shows an "Improve with AI" button (only if a key is configured). */
+  aiContext?: string;
 }) {
   const id = useId();
   const [text, setText] = useState(value.join("\n"));
@@ -136,9 +140,23 @@ export function ListField({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [value]);
 
+  function applyImproved(improved: string[]) {
+    setText(improved.join("\n"));
+    onChange(improved);
+  }
+
   return (
     <div className="space-y-1.5">
-      <Label htmlFor={id}>{label}</Label>
+      <div className="flex items-center justify-between gap-2">
+        <Label htmlFor={id}>{label}</Label>
+        {aiContext !== undefined ? (
+          <AiImproveButton
+            bullets={linesToList(text)}
+            context={aiContext}
+            onResult={applyImproved}
+          />
+        ) : null}
+      </div>
       <Textarea
         id={id}
         rows={rows}

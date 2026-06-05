@@ -1,14 +1,16 @@
 "use client";
 
-import { useRef } from "react";
+import { useRef, useState } from "react";
 import {
   Download,
   MoreHorizontal,
   RotateCcw,
   Sparkles,
   Upload,
+  Wand2,
 } from "lucide-react";
 
+import { AiSettings } from "@/components/ai/AiSettings";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -27,6 +29,7 @@ export function MoreMenu() {
   const loadSample = useResumeStore((s) => s.loadSample);
   const resetResume = useResumeStore((s) => s.resetResume);
   const inputRef = useRef<HTMLInputElement>(null);
+  const [aiOpen, setAiOpen] = useState(false);
 
   async function handleJsonFile(file: File | undefined) {
     if (!file) return;
@@ -83,8 +86,15 @@ export function MoreMenu() {
             <RotateCcw />
             Start blank
           </DropdownMenuItem>
+          <DropdownMenuSeparator />
+          <DropdownMenuItem onSelect={() => setAiOpen(true)}>
+            <Wand2 />
+            AI bullet helper…
+          </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
+
+      <AiSettings open={aiOpen} onOpenChange={setAiOpen} />
 
       <input
         ref={inputRef}

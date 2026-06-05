@@ -80,6 +80,7 @@ export function WorkSection() {
             onChange={(v) => updateEntry("work", w.id, { highlights: v })}
             placeholder={"One achievement per line.\nStart with an action verb and quantify when you can."}
             rows={5}
+            aiContext={`${w.position || "role"}${w.name ? ` at ${w.name}` : ""}`}
           />
         </EntryCard>
       ))}
