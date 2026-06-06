@@ -5,8 +5,12 @@ import { AtsClassic } from "./AtsClassic";
 import { Banner } from "./Banner";
 import { Compact } from "./Compact";
 import { Designer } from "./Designer";
+import { Elegant } from "./Elegant";
+import { Executive } from "./Executive";
 import { Modern } from "./Modern";
 import { Sidebar } from "./Sidebar";
+import { Timeline } from "./Timeline";
+import { Zenith } from "./Zenith";
 
 /**
  * Maps a template id to its React-PDF component. This module imports
@@ -21,6 +25,10 @@ const COMPONENTS: Record<string, ComponentType<{ data: ResumeData }>> = {
   designer: Designer,
   sidebar: Sidebar,
   banner: Banner,
+  executive: Executive,
+  elegant: Elegant,
+  timeline: Timeline,
+  zenith: Zenith,
 };
 
 export function getTemplateComponent(

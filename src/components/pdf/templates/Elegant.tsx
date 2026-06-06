@@ -1,0 +1,309 @@
+import {
+  Document,
+  Link,
+  Page,
+  StyleSheet,
+  Text,
+  View,
+} from "@react-pdf/renderer";
+
+import { formatDateRange, formatMonthYear } from "@/lib/resume/format";
+import { resolveSectionOrder } from "@/lib/resume/sections";
+import { makeScale, resolveAccent, resolveFont, type ResolvedFont, type Scale } from "@/lib/resume/theme";
+import { ensureFontRegistered } from "@/lib/resume/fonts";
+import type { HideableSection, ResumeData } from "@/lib/resume/types";
+import { contactItems, degreeLine, sectionPresence } from "./shared";
+
+/**
+ * Elegant — centered, airy, editorial. Generous whitespace and centered section
+ * headings with a short accent underline. Single column with real text, so it
+ * stays ATS-friendly. Looks especially nice with a serif font (Times / Crimson).
+ */
+
+const TEXT = "#1a1a1a";
+const MUTED = "#555555";
+const RULE = "#d4d4d8";
+const DEFAULT_ACCENT = "#1f2937";
+
+function makeStyles(accent: string, sc: Scale, font: ResolvedFont) {
+  return StyleSheet.create({
+    page: {
+      paddingTop: sc.s(46),
+      paddingBottom: sc.s(48),
+      paddingHorizontal: sc.s(56),
+      fontFamily: font.regular,
+      fontSize: sc.f(10),
+      color: TEXT,
+      lineHeight: sc.l(1.45),
+    },
+    header: {
+      alignItems: "center",
+      borderBottomWidth: 1,
+      borderBottomColor: RULE,
+      paddingBottom: sc.s(10),
+      marginBottom: sc.s(4),
+    },
+    name: {
+      fontSize: sc.f(24),
+      fontFamily: font.bold,
+      letterSpacing: 2,
+      textAlign: "center",
+      lineHeight: sc.l(1.15),
+    },
+    label: {
+      fontSize: sc.f(11),
+      color: accent,
+      letterSpacing: 1,
+      textTransform: "uppercase",
+      marginTop: sc.s(3),
+      textAlign: "center",
+    },
+    contact: { fontSize: sc.f(9), color: MUTED, marginTop: sc.s(7), textAlign: "center" },
+    contactSep: { color: RULE },
+    link: { color: MUTED, textDecoration: "none" },
+
+    section: { marginTop: sc.s(15) },
+    titleWrap: { alignItems: "center", marginBottom: sc.s(7) },
+    title: {
+      fontSize: sc.f(11),
+      fontFamily: font.bold,
+      letterSpacing: 2,
+      textTransform: "uppercase",
+      textAlign: "center",
+    },
+    titleUnderline: {
+      width: sc.s(26),
+      height: 1.5,
+      backgroundColor: accent,
+      marginTop: sc.s(4),
+    },
+    summary: { fontSize: sc.f(10), textAlign: "center" },
+
+    entry: { marginBottom: sc.sp(9) },
+    entryHeaderRow: {
+      flexDirection: "row",
+      justifyContent: "space-between",
+      alignItems: "flex-start",
+    },
+    entryTitle: { fontSize: sc.f(10.5), fontFamily: font.bold },
+    entrySubtitle: { fontSize: sc.f(10), color: MUTED },
+    entryMeta: {
+      fontSize: sc.f(9),
+      color: MUTED,
+      textAlign: "right",
+      flexShrink: 0,
+      marginLeft: sc.s(10),
+    },
+    entrySummary: { fontSize: sc.f(10), marginTop: sc.s(2) },
+
+    bulletRow: { flexDirection: "row", marginTop: sc.sp(2), paddingRight: sc.s(4) },
+    bulletGlyph: { width: sc.s(11), color: accent, fontSize: sc.f(10) },
+    bulletText: { flex: 1, fontSize: sc.f(10) },
+
+    skillRow: { flexDirection: "row", marginBottom: sc.sp(3), justifyContent: "center" },
+    skillCategory: { fontFamily: font.bold, fontSize: sc.f(10) },
+    skillKeywords: { fontSize: sc.f(10) },
+  });
+}
+
+type Styles = ReturnType<typeof makeStyles>;
+
+function SectionTitle({ styles, children }: { styles: Styles; children: string }) {
+  return (
+    <View style={styles.titleWrap}>
+      <Text style={styles.title}>{children}</Text>
+      <View style={styles.titleUnderline} />
+    </View>
+  );
+}
+
+function Bullet({ styles, children }: { styles: Styles; children: string }) {
+  return (
+    <View style={styles.bulletRow}>
+      <Text style={styles.bulletGlyph}>•</Text>
+      <Text style={styles.bulletText}>{children}</Text>
+    </View>
+  );
+}
+
+export function Elegant({ data }: { data: ResumeData }) {
+  ensureFontRegistered(data.meta.fontFamily);
+  const { basics, work, education, projects, skills, certificates } = data;
+  const has = sectionPresence(data);
+  const items = contactItems(basics);
+  const accent = resolveAccent(data.meta.themeColor, DEFAULT_ACCENT);
+  const font = resolveFont(data.meta.fontFamily);
+  const styles = makeStyles(accent, makeScale(data.meta), font);
+
+  const renderSection = (key: HideableSection): React.ReactNode => {
+    switch (key) {
+      case "summary":
+        return has.summary ? (
+          <View key="summary" style={styles.section}>
+            <SectionTitle styles={styles}>Summary</SectionTitle>
+            <Text style={styles.summary}>{basics.summary}</Text>
+          </View>
+        ) : null;
+      case "work":
+        return has.work ? (
+          <View key="work" style={styles.section}>
+            <SectionTitle styles={styles}>Experience</SectionTitle>
+            {work.map((w) => (
+              <View key={w.id} style={styles.entry} wrap={false}>
+                <View style={styles.entryHeaderRow}>
+                  <Text style={[styles.entryTitle, { flex: 1 }]}>
+                    {w.position || w.name}
+                    {w.position && w.name ? (
+                      <Text style={styles.entrySubtitle}>{` — ${w.name}`}</Text>
+                    ) : null}
+                  </Text>
+                  {formatDateRange(w.startDate, w.endDate) || w.location ? (
+                    <Text style={styles.entryMeta}>
+                      {[formatDateRange(w.startDate, w.endDate), w.location]
+                        .filter(Boolean)
+                        .join("  ·  ")}
+                    </Text>
+                  ) : null}
+                </View>
+                {w.summary ? (
+                  <Text style={styles.entrySummary}>{w.summary}</Text>
+                ) : null}
+                {w.highlights.map((h, i) => (
+                  <Bullet key={i} styles={styles}>
+                    {h}
+                  </Bullet>
+                ))}
+              </View>
+            ))}
+          </View>
+        ) : null;
+      case "education":
+        return has.education ? (
+          <View key="education" style={styles.section}>
+            <SectionTitle styles={styles}>Education</SectionTitle>
+            {education.map((e) => (
+              <View key={e.id} style={styles.entry} wrap={false}>
+                <View style={styles.entryHeaderRow}>
+                  <View style={{ flex: 1 }}>
+                    <Text style={styles.entryTitle}>{e.institution}</Text>
+                    {degreeLine(e.studyType, e.area) ? (
+                      <Text style={styles.entrySubtitle}>
+                        {degreeLine(e.studyType, e.area)}
+                      </Text>
+                    ) : null}
+                  </View>
+                  {formatDateRange(e.startDate, e.endDate) || e.score ? (
+                    <Text style={styles.entryMeta}>
+                      {[formatDateRange(e.startDate, e.endDate), e.score]
+                        .filter(Boolean)
+                        .join("  ·  ")}
+                    </Text>
+                  ) : null}
+                </View>
+              </View>
+            ))}
+          </View>
+        ) : null;
+      case "projects":
+        return has.projects ? (
+          <View key="projects" style={styles.section}>
+            <SectionTitle styles={styles}>Projects</SectionTitle>
+            {projects.map((p) => (
+              <View key={p.id} style={styles.entry} wrap={false}>
+                <View style={styles.entryHeaderRow}>
+                  <Text style={[styles.entryTitle, { flex: 1 }]}>
+                    {p.url ? (
+                      <Link style={styles.link} src={p.url}>
+                        {p.name}
+                      </Link>
+                    ) : (
+                      p.name
+                    )}
+                  </Text>
+                  {p.keywords.length ? (
+                    <Text style={styles.entryMeta}>{p.keywords.join(", ")}</Text>
+                  ) : null}
+                </View>
+                {p.description ? (
+                  <Text style={styles.entrySummary}>{p.description}</Text>
+                ) : null}
+                {p.highlights.map((h, i) => (
+                  <Bullet key={i} styles={styles}>
+                    {h}
+                  </Bullet>
+                ))}
+              </View>
+            ))}
+          </View>
+        ) : null;
+      case "skills":
+        return has.skills ? (
+          <View key="skills" style={styles.section}>
+            <SectionTitle styles={styles}>Skills</SectionTitle>
+            {skills.map((s) => (
+              <View key={s.id} style={styles.skillRow}>
+                {s.name ? (
+                  <Text style={styles.skillCategory}>{`${s.name}: `}</Text>
+                ) : null}
+                <Text style={styles.skillKeywords}>{s.keywords.join(", ")}</Text>
+              </View>
+            ))}
+          </View>
+        ) : null;
+      case "certificates":
+        return has.certificates ? (
+          <View key="certificates" style={styles.section}>
+            <SectionTitle styles={styles}>Certifications</SectionTitle>
+            {certificates.map((c) => (
+              <View key={c.id} style={styles.entry} wrap={false}>
+                <View style={styles.entryHeaderRow}>
+                  <Text style={[styles.entryTitle, { flex: 1 }]}>{c.name}</Text>
+                  {[c.issuer, formatMonthYear(c.date)].filter(Boolean).length ? (
+                    <Text style={styles.entryMeta}>
+                      {[c.issuer, formatMonthYear(c.date)]
+                        .filter(Boolean)
+                        .join("  ·  ")}
+                    </Text>
+                  ) : null}
+                </View>
+              </View>
+            ))}
+          </View>
+        ) : null;
+      default:
+        return null;
+    }
+  };
+
+  return (
+    <Document
+      title={basics.name ? `${basics.name} — Résumé` : "Résumé"}
+      author={basics.name || undefined}
+    >
+      <Page size="LETTER" style={styles.page}>
+        <View style={styles.header}>
+          <Text style={styles.name}>{basics.name || "Your Name"}</Text>
+          {basics.label ? <Text style={styles.label}>{basics.label}</Text> : null}
+          {items.length > 0 ? (
+            <Text style={styles.contact}>
+              {items.map((it, i) => (
+                <Text key={i}>
+                  {i > 0 ? <Text style={styles.contactSep}>{"   ·   "}</Text> : null}
+                  {it.href ? (
+                    <Link style={styles.link} src={it.href}>
+                      {it.text}
+                    </Link>
+                  ) : (
+                    it.text
+                  )}
+                </Text>
+              ))}
+            </Text>
+          ) : null}
+        </View>
+
+        {resolveSectionOrder(data.meta).map(renderSection)}
+      </Page>
+    </Document>
+  );
+}

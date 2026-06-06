@@ -58,6 +58,34 @@ export const TEMPLATES: TemplateMeta[] = [
     atsSafe: false,
     supportsPhoto: true,
   },
+  {
+    id: "executive",
+    name: "Executive",
+    description:
+      "Structured header (name left, contact right) with accent-underlined headings. ATS-safe.",
+    atsSafe: true,
+  },
+  {
+    id: "elegant",
+    name: "Elegant",
+    description:
+      "Centered, airy layout with serif-friendly headings. ATS-safe; pairs nicely with a serif font.",
+    atsSafe: true,
+  },
+  {
+    id: "timeline",
+    name: "Timeline",
+    description:
+      "Single column with a vertical timeline down your experience. ATS-safe.",
+    atsSafe: true,
+  },
+  {
+    id: "zenith",
+    name: "Zenith",
+    description:
+      "Editorial layout with section labels in a slim left margin. May reduce ATS compatibility.",
+    atsSafe: false,
+  },
 ];
 
 export const DEFAULT_TEMPLATE_ID = "ats-classic";
