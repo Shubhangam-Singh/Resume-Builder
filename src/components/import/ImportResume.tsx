@@ -6,6 +6,7 @@ import {
   CheckCircle2,
   FileText,
   Loader2,
+  Sparkles,
   Upload,
 } from "lucide-react";
 
@@ -21,6 +22,7 @@ import {
 } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
 import { ACCEPT_ATTR, extractText } from "@/lib/import/extract";
+import { selectActiveKey, selectActiveModel, useAiStore } from "@/lib/ai/store";
 import { parseResumeText, type ParseResult } from "@/lib/parser";
 import { useResumeStore } from "@/lib/store";
 
@@ -28,7 +30,9 @@ type Status = "idle" | "reading" | "review" | "error";
 
 export function ImportResume() {
   const setResume = useResumeStore((s) => s.setResume);
-  const currentTemplate = useResumeStore((s) => s.resume.meta.template);
+  const provider = useAiStore((s) => s.provider);
+  const apiKey = useAiStore(selectActiveKey);
+  const aiModel = useAiStore(selectActiveModel);
   const [open, setOpen] = useState(false);
   const [status, setStatus] = useState<Status>("idle");
   const [fileName, setFileName] = useState("");
@@ -36,6 +40,9 @@ export function ImportResume() {
   const [extractedText, setExtractedText] = useState("");
   const [error, setError] = useState("");
   const [dragging, setDragging] = useState(false);
+  const [method, setMethod] = useState<"heuristic" | "ai">("heuristic");
+  const [aiBusy, setAiBusy] = useState(false);
+  const [aiError, setAiError] = useState("");
   const inputRef = useRef<HTMLInputElement>(null);
 
   function reset() {
@@ -45,6 +52,9 @@ export function ImportResume() {
     setExtractedText("");
     setError("");
     setDragging(false);
+    setMethod("heuristic");
+    setAiBusy(false);
+    setAiError("");
   }
 
   function handleOpenChange(next: boolean) {
@@ -57,6 +67,8 @@ export function ImportResume() {
     setFileName(file.name);
     setStatus("reading");
     setError("");
+    setAiError("");
+    setMethod("heuristic");
     try {
       const text = await extractText(file);
       setExtractedText(text);
@@ -72,12 +84,34 @@ export function ImportResume() {
     }
   }
 
+  async function parseWithAi() {
+    if (!apiKey || !extractedText.trim() || aiBusy) return;
+    setAiBusy(true);
+    setAiError("");
+    try {
+      const { parseResumeWithAi } = await import("@/lib/ai/parse");
+      const r = await parseResumeWithAi(extractedText, {
+        provider,
+        apiKey,
+        model: aiModel,
+      });
+      setResult(r);
+      setMethod("ai");
+    } catch (err) {
+      setAiError(err instanceof Error ? err.message : "AI parsing failed.");
+    } finally {
+      setAiBusy(false);
+    }
+  }
+
   function applyImport() {
     if (result) {
-      // Import replaces content but keeps the template the user already picked.
+      // Import swaps in the résumé content but keeps the design the user has
+      // chosen (template, accent, density, font, section order/visibility).
+      const currentMeta = useResumeStore.getState().resume.meta;
       setResume({
         ...result.data,
-        meta: { ...result.data.meta, template: currentTemplate },
+        meta: { ...currentMeta, lastModified: new Date().toISOString() },
       });
     }
     handleOpenChange(false);
@@ -96,8 +130,8 @@ export function ImportResume() {
         <DialogHeader>
           <DialogTitle>Import an existing resume</DialogTitle>
           <DialogDescription>
-            PDF, DOCX, or TXT. Everything is read in your browser — your file is
-            never uploaded anywhere.
+            PDF, DOCX, or TXT, read in your browser. Local parsing is private; AI
+            parsing sends the extracted text to your chosen AI provider.
           </DialogDescription>
         </DialogHeader>
 
@@ -131,6 +165,44 @@ export function ImportResume() {
 
         {status === "review" && result && (
           <ReviewPanel result={result} onChooseAnother={reset} />
+        )}
+
+        {status === "review" && (
+          <div className="space-y-1.5">
+            {apiKey ? (
+              <Button
+                variant="outline"
+                className="w-full"
+                onClick={parseWithAi}
+                disabled={aiBusy || !extractedText.trim()}
+              >
+                {aiBusy ? (
+                  <Loader2 className="animate-spin" />
+                ) : (
+                  <Sparkles className="text-amber-500" />
+                )}
+                {aiBusy
+                  ? "Parsing with AI…"
+                  : method === "ai"
+                    ? "Re-parse with AI"
+                    : "Parse with AI — fills everything accurately"}
+              </Button>
+            ) : (
+              <p className="rounded-md bg-muted/50 p-2 text-xs text-muted-foreground">
+                Tip: add an API key in{" "}
+                <span className="font-medium">More → AI bullet helper</span> to
+                let AI read your résumé and fill every field.
+              </p>
+            )}
+            {method === "ai" && !aiBusy ? (
+              <p className="flex items-center gap-1 text-xs text-emerald-600">
+                <Sparkles className="h-3 w-3" /> Parsed with AI
+              </p>
+            ) : null}
+            {aiError ? (
+              <p className="text-xs text-destructive">{aiError}</p>
+            ) : null}
+          </div>
         )}
 
         {status === "review" && (
