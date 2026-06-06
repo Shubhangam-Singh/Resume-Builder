@@ -1,0 +1,27 @@
+{
+  "name": "ResumeForge — Free ATS Resume Builder",
+  "short_name": "ResumeForge",
+  "description": "Build a professional, ATS-friendly resume for free. No signup, no upload — runs entirely in your browser.",
+  "start_url": "/Resume-Builder/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#0f172a",
+  "orientation": "any",
+  "categories": ["productivity", "business"],
+  "lang": "en",
+  "icons": [
+    {
+      "src": "/Resume-Builder/favicon.ico",
+      "sizes": "48x48",
+      "type": "image/x-icon"
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "/Resume-Builder/og-image.png",
+      "sizes": "1200x630",
+      "type": "image/png",
+      "label": "ResumeForge resume editor"
+    }
+  ]
+}

@@ -1,0 +1,5 @@
+User-agent: *
+Allow: /
+
+# Sitemap location
+Sitemap: https://shubhangam-singh.github.io/Resume-Builder/sitemap.xml
