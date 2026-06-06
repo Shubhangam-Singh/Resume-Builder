@@ -38,7 +38,10 @@ export function TemplateSwitcher() {
         </button>
       </DropdownMenuTrigger>
 
-      <DropdownMenuContent align="end" className="w-72">
+      <DropdownMenuContent
+        align="end"
+        className="max-h-[min(70vh,28rem)] w-72 overflow-y-auto"
+      >
         <DropdownMenuLabel>Template</DropdownMenuLabel>
         <DropdownMenuSeparator />
         <DropdownMenuRadioGroup value={templateId} onValueChange={setTemplate}>

@@ -11,6 +11,7 @@ import { ImportResume } from "@/components/import/ImportResume";
 import { AtsChecker } from "@/components/ats/AtsChecker";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { cn } from "@/lib/utils";
+import { useMediaQuery } from "@/lib/use-media-query";
 import { useResumePersistence } from "@/lib/persist/useResumePersistence";
 import { Editor } from "./Editor";
 import { MoreMenu } from "./MoreMenu";
@@ -22,6 +23,10 @@ type MobileView = "edit" | "preview";
 export function Workspace() {
   const hydrated = useResumePersistence();
   const [mobileView, setMobileView] = useState<MobileView>("edit");
+  const isDesktop = useMediaQuery("(min-width: 1024px)");
+  // Mount the preview only when it's actually visible — on mobile this avoids
+  // rasterizing the PDF in the background while the user is editing.
+  const showPreview = isDesktop || mobileView === "preview";
 
   if (!hydrated) {
     return (
@@ -100,7 +105,7 @@ export function Workspace() {
             </div>
           </div>
           <div className="min-h-0 flex-1">
-            <LivePreview />
+            {showPreview ? <LivePreview useImages={!isDesktop} /> : null}
           </div>
         </section>
       </div>
