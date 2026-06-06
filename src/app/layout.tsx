@@ -14,7 +14,7 @@ const geistMono = localFont({
 });
 
 // ── Change this to your live URL once deployed ──────────────────────────────
-const SITE_URL = "https://shubhangam-singh.github.io/Resume-Builder";
+const SITE_URL = "https://forgemyresume.vercel.app";
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
