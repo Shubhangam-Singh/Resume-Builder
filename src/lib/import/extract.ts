@@ -9,8 +9,8 @@ export const ACCEPTED_EXTENSIONS = [".pdf", ".docx", ".txt"];
 export const ACCEPT_ATTR =
   "application/pdf,.pdf,.docx,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/plain,.txt";
 
-/** Maximum file size we will attempt to parse (10 MB). */
-const MAX_FILE_BYTES = 10 * 1024 * 1024;
+/** Maximum file size we will attempt to parse (5 MB — resumes are rarely over 1–2 MB). */
+const MAX_FILE_BYTES = 5 * 1024 * 1024;
 
 /** Allowed MIME types — checked in addition to file extension. */
 const ALLOWED_MIME_TYPES = new Set([

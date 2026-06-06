@@ -204,7 +204,7 @@ function Dropzone({
         <p className="text-sm font-medium">
           Drop your resume here, or click to browse
         </p>
-        <p className="mt-1 text-xs text-muted-foreground">PDF, DOCX or TXT</p>
+        <p className="mt-1 text-xs text-muted-foreground">PDF, DOCX or TXT · Max 5 MB</p>
       </div>
     </button>
   );
