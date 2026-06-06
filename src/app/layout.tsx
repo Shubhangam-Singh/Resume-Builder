@@ -99,11 +99,6 @@ export const metadata: Metadata = {
   // ── App manifest / PWA hints ──────────────────────────────────────────────
   applicationName: "ResumeForge",
   manifest: "/manifest.json",
-  icons: {
-    icon: "/favicon.ico",
-    shortcut: "/favicon.ico",
-    apple: "/apple-touch-icon.png",
-  },
 
   // ── Verification tokens ───────────────────────────────────────────────────
   verification: {
