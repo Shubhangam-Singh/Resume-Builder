@@ -1,3 +1,4 @@
+import { IntroSplash } from "@/components/IntroSplash";
 import { Workspace } from "@/components/editor/Workspace";
 
 export default function Home() {
@@ -57,6 +58,7 @@ export default function Home() {
           <dd>Yes. ResumeForge is fully responsive and works on phones, tablets, and desktops.</dd>
         </dl>
       </div>
+      <IntroSplash />
       <Workspace />
     </>
   );

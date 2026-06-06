@@ -64,3 +64,13 @@
     scrollbar-width: thin;
   }
 }
+
+/* Intro splash progress bar */
+@keyframes rf-intro-bar {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
+}
