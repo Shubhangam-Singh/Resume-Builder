@@ -46,9 +46,15 @@ export function DownloadButton() {
   }
 
   return (
-    <Button onClick={handleDownload} disabled={busy}>
+    <Button
+      onClick={handleDownload}
+      disabled={busy}
+      aria-label="Download PDF"
+    >
       {busy ? <Loader2 className="animate-spin" /> : <Download />}
-      {busy ? "Generating…" : "Download PDF"}
+      <span className="hidden sm:inline">
+        {busy ? "Generating…" : "Download PDF"}
+      </span>
     </Button>
   );
 }
