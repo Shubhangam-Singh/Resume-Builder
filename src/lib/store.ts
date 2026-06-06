@@ -2,6 +2,8 @@ import { create } from "zustand";
 
 import {
   emptyCertificate,
+  emptyCustomItem,
+  emptyCustomSection,
   emptyEducation,
   emptyProfile,
   emptyProject,
@@ -10,18 +12,21 @@ import {
   emptyWork,
   sampleResume,
 } from "./resume/factory";
-import { resolveSectionOrder } from "./resume/sections";
+import { customKey, resolveSectionOrder } from "./resume/sections";
 import { DENSITY_PRESETS } from "./resume/theme";
 import type {
   ArraySectionKey,
   Basics,
   CertificateEntry,
+  CustomItem,
+  CustomSection,
+  DateFormat,
   EducationEntry,
-  HideableSection,
   Location,
   Profile,
   ProjectEntry,
   ResumeData,
+  SectionKey,
   SkillEntry,
   WorkEntry,
 } from "./resume/types";
@@ -43,8 +48,18 @@ const emptyFactories: { [K in ArraySectionKey]: () => SectionElement[K] } = {
   certificates: emptyCertificate,
 };
 
+/** Undo/redo: how many past/future states to keep, and how long edits coalesce. */
+const HISTORY_LIMIT = 60;
+const COALESCE_MS = 600;
+
 interface ResumeStore {
   resume: ResumeData;
+
+  // undo/redo history (snapshots of past/future resume states)
+  past: ResumeData[];
+  future: ResumeData[];
+  undo: () => void;
+  redo: () => void;
 
   // active saved-document identity (for multiple resumes)
   documentId: string;
@@ -71,10 +86,23 @@ interface ResumeStore {
   removeEntry: (section: ArraySectionKey, id: string) => void;
   moveEntry: (section: ArraySectionKey, id: string, dir: -1 | 1) => void;
 
+  // custom sections
+  addCustomSection: (title?: string) => void;
+  updateCustomSection: (id: string, patch: Partial<Omit<CustomSection, "items">>) => void;
+  removeCustomSection: (id: string) => void;
+  addCustomItem: (sectionId: string) => void;
+  updateCustomItem: (
+    sectionId: string,
+    itemId: string,
+    patch: Partial<CustomItem>,
+  ) => void;
+  removeCustomItem: (sectionId: string, itemId: string) => void;
+  moveCustomItem: (sectionId: string, itemId: string, dir: -1 | 1) => void;
+
   // meta
   setTemplate: (template: string) => void;
-  toggleSection: (section: HideableSection) => void;
-  moveSection: (section: HideableSection, dir: -1 | 1) => void;
+  toggleSection: (section: SectionKey) => void;
+  moveSection: (section: SectionKey, dir: -1 | 1) => void;
   setThemeColor: (color: string | undefined) => void;
   setDensity: (density: "compact" | "standard" | "loose") => void;
   setFontFamily: (fontFamily: string) => void;
@@ -82,6 +110,7 @@ interface ResumeStore {
   setLineSpacing: (value: number) => void;
   setSectionSpacing: (value: number) => void;
   setParagraphSpacing: (value: number) => void;
+  setDateFormat: (value: DateFormat) => void;
 
   // whole-document
   setResume: (resume: ResumeData) => void;
@@ -90,22 +119,76 @@ interface ResumeStore {
 }
 
 export const useResumeStore = create<ResumeStore>((set) => {
-  /** Deep-clone, apply a mutation, and stamp lastModified. */
+  // Timestamp of the last history snapshot, so a burst of rapid keystrokes
+  // collapses into a single undo step instead of one-per-character.
+  let lastSnapshotAt = 0;
+
+  /** Deep-clone, apply a mutation, stamp lastModified, and record undo history. */
   const mutate = (fn: (r: ResumeData) => void) =>
     set((state) => {
       const resume = structuredClone(state.resume);
       fn(resume);
       resume.meta.lastModified = new Date().toISOString();
-      return { resume };
+
+      const now = Date.now();
+      let past = state.past;
+      if (now - lastSnapshotAt > COALESCE_MS) {
+        past = [...state.past, state.resume].slice(-HISTORY_LIMIT);
+      }
+      lastSnapshotAt = now;
+      return { resume, past, future: [] };
+    });
+
+  /** Replace the whole resume as a single, undoable step (import / sample / clear). */
+  const replace = (next: ResumeData) =>
+    set((state) => {
+      lastSnapshotAt = 0; // force the next edit to start a fresh undo step
+      return {
+        resume: next,
+        past: [...state.past, state.resume].slice(-HISTORY_LIMIT),
+        future: [],
+      };
     });
 
   return {
     resume: sampleResume(),
+    past: [],
+    future: [],
     documentId: "",
     documentName: "My resume",
 
+    undo: () =>
+      set((state) => {
+        if (state.past.length === 0) return {};
+        const previous = state.past[state.past.length - 1];
+        lastSnapshotAt = 0;
+        return {
+          resume: previous,
+          past: state.past.slice(0, -1),
+          future: [state.resume, ...state.future].slice(0, HISTORY_LIMIT),
+        };
+      }),
+
+    redo: () =>
+      set((state) => {
+        if (state.future.length === 0) return {};
+        const next = state.future[0];
+        lastSnapshotAt = 0;
+        return {
+          resume: next,
+          past: [...state.past, state.resume].slice(-HISTORY_LIMIT),
+          future: state.future.slice(1),
+        };
+      }),
+
     loadDocument: (doc) =>
-      set({ resume: doc.data, documentId: doc.id, documentName: doc.name }),
+      set({
+        resume: doc.data,
+        documentId: doc.id,
+        documentName: doc.name,
+        past: [],
+        future: [],
+      }),
     setDocumentName: (name) => set({ documentName: name }),
 
     updateBasics: (patch) =>
@@ -162,6 +245,57 @@ export const useResumeStore = create<ResumeStore>((set) => {
         [list[i], list[j]] = [list[j], list[i]];
       }),
 
+    // ---- custom sections --------------------------------------------------
+    addCustomSection: (title) =>
+      mutate((r) => {
+        r.customSections = [...(r.customSections ?? []), emptyCustomSection(title)];
+      }),
+
+    updateCustomSection: (id, patch) =>
+      mutate((r) => {
+        const s = (r.customSections ?? []).find((x) => x.id === id);
+        if (s) Object.assign(s, patch);
+      }),
+
+    removeCustomSection: (id) =>
+      mutate((r) => {
+        r.customSections = (r.customSections ?? []).filter((x) => x.id !== id);
+        const key = customKey(id);
+        if (r.meta.sectionOrder)
+          r.meta.sectionOrder = r.meta.sectionOrder.filter((k) => k !== key);
+        if (r.meta.hiddenSections)
+          r.meta.hiddenSections = r.meta.hiddenSections.filter((k) => k !== key);
+      }),
+
+    addCustomItem: (sectionId) =>
+      mutate((r) => {
+        const s = (r.customSections ?? []).find((x) => x.id === sectionId);
+        if (s) s.items.push(emptyCustomItem());
+      }),
+
+    updateCustomItem: (sectionId, itemId, patch) =>
+      mutate((r) => {
+        const s = (r.customSections ?? []).find((x) => x.id === sectionId);
+        const item = s?.items.find((i) => i.id === itemId);
+        if (item) Object.assign(item, patch);
+      }),
+
+    removeCustomItem: (sectionId, itemId) =>
+      mutate((r) => {
+        const s = (r.customSections ?? []).find((x) => x.id === sectionId);
+        if (s) s.items = s.items.filter((i) => i.id !== itemId);
+      }),
+
+    moveCustomItem: (sectionId, itemId, dir) =>
+      mutate((r) => {
+        const s = (r.customSections ?? []).find((x) => x.id === sectionId);
+        if (!s) return;
+        const i = s.items.findIndex((x) => x.id === itemId);
+        const j = i + dir;
+        if (i < 0 || j < 0 || j >= s.items.length) return;
+        [s.items[i], s.items[j]] = [s.items[j], s.items[i]];
+      }),
+
     setTemplate: (template) =>
       mutate((r) => {
         r.meta.template = template;
@@ -212,6 +346,11 @@ export const useResumeStore = create<ResumeStore>((set) => {
         r.meta.density = undefined;
       }),
 
+    setDateFormat: (value) =>
+      mutate((r) => {
+        r.meta.dateFormat = value;
+      }),
+
     toggleSection: (section) =>
       mutate((r) => {
         const hidden = new Set(r.meta.hiddenSections ?? []);
@@ -222,7 +361,7 @@ export const useResumeStore = create<ResumeStore>((set) => {
 
     moveSection: (section, dir) =>
       mutate((r) => {
-        const order = resolveSectionOrder(r.meta);
+        const order = resolveSectionOrder(r.meta, r.customSections ?? []);
         const i = order.indexOf(section);
         const j = i + dir;
         if (i < 0 || j < 0 || j >= order.length) return;
@@ -231,14 +370,16 @@ export const useResumeStore = create<ResumeStore>((set) => {
       }),
 
     setResume: (resume) =>
-      set({
-        resume: {
-          ...resume,
-          meta: { ...resume.meta, lastModified: new Date().toISOString() },
-        },
+      replace({
+        ...resume,
+        meta: { ...resume.meta, lastModified: new Date().toISOString() },
       }),
 
-    resetResume: () => set({ resume: emptyResume() }),
-    loadSample: () => set({ resume: sampleResume() }),
+    resetResume: () => replace(emptyResume()),
+    loadSample: () => replace(sampleResume()),
   };
 });
+
+/** Selectors for undo/redo availability (use in components). */
+export const selectCanUndo = (s: ResumeStore) => s.past.length > 0;
+export const selectCanRedo = (s: ResumeStore) => s.future.length > 0;

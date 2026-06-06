@@ -29,8 +29,14 @@ import {
   type FieldCheck,
   type Issue,
 } from "@/lib/ats/check";
-import { analyzeCoverage, type CoverageResult } from "@/lib/ats/keywords";
+import {
+  analyzeCoverage,
+  highlightMatches,
+  type CoverageResult,
+} from "@/lib/ats/keywords";
 import { resumeToPlainText } from "@/lib/ats/resume-text";
+import { scoreResume, type ScoreResult } from "@/lib/ats/score";
+import { checkWriting, type WritingIssue } from "@/lib/writing/check";
 import { parseResumeText } from "@/lib/parser";
 import { cn } from "@/lib/utils";
 import { useResumeStore } from "@/lib/store";
@@ -46,6 +52,8 @@ interface SelfReport {
 export function AtsChecker() {
   const resume = useResumeStore((s) => s.resume);
   const template = getTemplateMeta(resume.meta.template);
+  const score = scoreResume(resume, template.atsSafe);
+  const writing = checkWriting(resume);
 
   const [open, setOpen] = useState(false);
   const [status, setStatus] = useState<SelfStatus>("idle");
@@ -128,8 +136,11 @@ export function AtsChecker() {
           </DialogDescription>
         </DialogHeader>
 
+        {/* Score breakdown */}
+        <ScoreBreakdown score={score} />
+
         {/* Self-check */}
-        <section className="space-y-3">
+        <section className="space-y-3 border-t pt-4">
           <div className="flex items-center justify-between">
             <h3 className="text-sm font-semibold">Can an ATS read your resume?</h3>
             {status === "done" && (
@@ -212,7 +223,10 @@ export function AtsChecker() {
           </div>
 
           {coverage && coverage.total > 0 && (
-            <CoveragePanel coverage={coverage} />
+            <CoveragePanel
+              coverage={coverage}
+              resumeText={resumeToPlainText(resume)}
+            />
           )}
           {coverage && coverage.total === 0 && (
             <p className="text-sm text-muted-foreground">
@@ -221,8 +235,90 @@ export function AtsChecker() {
             </p>
           )}
         </section>
+
+        {/* Writing check */}
+        <WritingPanel issues={writing} />
       </DialogContent>
     </Dialog>
+  );
+}
+
+function ScoreBreakdown({ score }: { score: ScoreResult }) {
+  const tone = (n: number) =>
+    n >= 80 ? "text-emerald-600" : n >= 50 ? "text-amber-600" : "text-rose-600";
+  const bar = (n: number) =>
+    n >= 80 ? "bg-emerald-500" : n >= 50 ? "bg-amber-500" : "bg-rose-500";
+
+  return (
+    <section className="space-y-3">
+      <div className="flex items-center justify-between">
+        <h3 className="text-sm font-semibold">ATS readiness score</h3>
+        <span className={cn("text-2xl font-bold", tone(score.overall))}>
+          {score.overall}
+          <span className="text-sm font-normal text-muted-foreground">/100</span>
+        </span>
+      </div>
+      <div className="space-y-2">
+        {score.sections.map((s) => (
+          <div key={s.key}>
+            <div className="mb-0.5 flex items-center justify-between text-xs">
+              <span className="font-medium">{s.label}</span>
+              <span className={cn("tabular-nums", tone(s.score))}>{s.score}</span>
+            </div>
+            <div className="h-1.5 w-full overflow-hidden rounded-full bg-muted">
+              <div
+                className={cn("h-full rounded-full", bar(s.score))}
+                style={{ width: `${s.score}%` }}
+              />
+            </div>
+            {s.score < 100 && (
+              <p className="mt-0.5 text-[11px] text-muted-foreground">{s.detail}</p>
+            )}
+          </div>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+function WritingPanel({ issues }: { issues: WritingIssue[] }) {
+  const warns = issues.filter((i) => i.severity === "warn");
+  const infos = issues.filter((i) => i.severity === "info");
+  return (
+    <section className="space-y-3 border-t pt-4">
+      <h3 className="text-sm font-semibold">Writing check</h3>
+      {issues.length === 0 ? (
+        <p className="flex items-center gap-1.5 text-sm text-emerald-600">
+          <CheckCircle2 className="h-4 w-4" /> No writing issues found — clean and
+          on-point.
+        </p>
+      ) : (
+        <>
+          <p className="text-xs text-muted-foreground">
+            {warns.length} suggestion{warns.length === 1 ? "" : "s"} and{" "}
+            {infos.length} tip{infos.length === 1 ? "" : "s"}. These run entirely
+            offline.
+          </p>
+          <ul className="max-h-56 space-y-1.5 overflow-y-auto">
+            {[...warns, ...infos].map((issue, i) => (
+              <li key={i} className="flex gap-2 text-xs">
+                {issue.severity === "warn" ? (
+                  <TriangleAlert className="mt-0.5 h-3.5 w-3.5 shrink-0 text-amber-600" />
+                ) : (
+                  <Info className="mt-0.5 h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+                )}
+                <span>
+                  <span className="font-medium text-muted-foreground">
+                    {issue.where}:
+                  </span>{" "}
+                  {issue.message}
+                </span>
+              </li>
+            ))}
+          </ul>
+        </>
+      )}
+    </section>
   );
 }
 
@@ -266,7 +362,13 @@ function IssueRow({ issue }: { issue: Issue }) {
   );
 }
 
-function CoveragePanel({ coverage }: { coverage: CoverageResult }) {
+function CoveragePanel({
+  coverage,
+  resumeText,
+}: {
+  coverage: CoverageResult;
+  resumeText: string;
+}) {
   const { results, matched, total } = coverage;
   const pct = coverage.coverage;
   const tone =
@@ -274,6 +376,10 @@ function CoveragePanel({ coverage }: { coverage: CoverageResult }) {
 
   const present = results.filter((r) => r.present);
   const missing = results.filter((r) => !r.present);
+  const segments = highlightMatches(
+    resumeText,
+    present.map((r) => r.term),
+  );
 
   return (
     <div className="space-y-3 rounded-md border bg-muted/40 p-3">
@@ -312,6 +418,28 @@ function CoveragePanel({ coverage }: { coverage: CoverageResult }) {
             ))}
           </div>
         </div>
+      )}
+
+      {present.length > 0 && (
+        <details className="rounded-md border bg-background p-2">
+          <summary className="cursor-pointer text-xs font-medium text-muted-foreground">
+            Tailored view — see matched keywords highlighted in your resume
+          </summary>
+          <p className="mt-2 max-h-56 overflow-auto whitespace-pre-wrap break-words text-[11px] leading-snug">
+            {segments.map((seg, i) =>
+              seg.match ? (
+                <mark
+                  key={i}
+                  className="rounded bg-emerald-200 px-0.5 text-emerald-900"
+                >
+                  {seg.text}
+                </mark>
+              ) : (
+                <span key={i}>{seg.text}</span>
+              ),
+            )}
+          </p>
+        </details>
       )}
     </div>
   );

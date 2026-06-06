@@ -3,8 +3,8 @@
 import { useResumeStore } from "@/lib/store";
 import {
   AddButton,
+  BulletEditor,
   EntryCard,
-  ListField,
   TagField,
   TextAreaField,
   TextField,
@@ -51,12 +51,11 @@ export function ProjectsSection() {
             placeholder="What it is and what it does."
             rows={2}
           />
-          <ListField
+          <BulletEditor
             label="Highlights"
             value={p.highlights}
             onChange={(v) => updateEntry("projects", p.id, { highlights: v })}
-            placeholder="One highlight per line."
-            rows={3}
+            placeholder="A notable highlight or result."
             aiContext={`project${p.name ? ` "${p.name}"` : ""}`}
           />
           <TagField

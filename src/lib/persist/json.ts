@@ -25,6 +25,13 @@ export function serializeResume(resume: ResumeData): unknown {
     projects: resume.projects.map(omitId),
     skills: resume.skills.map(omitId),
     certificates: resume.certificates.map(omitId),
+    // Custom sections keep their section id (referenced by meta.sectionOrder),
+    // but item ids are regenerated on import like every other entry.
+    customSections: (resume.customSections ?? []).map((s) => ({
+      id: s.id,
+      title: s.title,
+      items: s.items.map(omitId),
+    })),
     meta: resume.meta,
   };
 }
@@ -155,19 +162,38 @@ function coerceResume(raw: unknown): ResumeData {
     };
   });
 
+  out.customSections = list(root.customSections).map((s) => {
+    const o = obj(s);
+    return {
+      id: str(o.id) || uid(),
+      title: str(o.title),
+      items: list(o.items).map((it) => {
+        const io = obj(it);
+        return {
+          id: uid(),
+          name: str(io.name),
+          description: str(io.description),
+          date: str(io.date),
+          url: str(io.url),
+          highlights: strList(io.highlights),
+        };
+      }),
+    };
+  });
+  const customIds = new Set(out.customSections.map((s) => `custom:${s.id}`));
+  const validKey = (s: string) =>
+    (HIDEABLE as string[]).includes(s) || customIds.has(s);
+
   const meta = obj(root.meta);
   const density = str(meta.density);
+  const dateFormat = str(meta.dateFormat);
   const num = (v: unknown): number | undefined =>
     typeof v === "number" && Number.isFinite(v) ? v : undefined;
   out.meta = {
     template: str(meta.template) || out.meta.template,
     lastModified: new Date().toISOString(),
-    hiddenSections: strList(meta.hiddenSections).filter((s): s is HideableSection =>
-      (HIDEABLE as string[]).includes(s),
-    ),
-    sectionOrder: strList(meta.sectionOrder).filter((s): s is HideableSection =>
-      (HIDEABLE as string[]).includes(s),
-    ),
+    hiddenSections: strList(meta.hiddenSections).filter(validKey),
+    sectionOrder: strList(meta.sectionOrder).filter(validKey),
     themeColor: str(meta.themeColor) || undefined,
     density:
       density === "compact" || density === "standard" || density === "loose"
@@ -178,6 +204,14 @@ function coerceResume(raw: unknown): ResumeData {
     lineSpacing: num(meta.lineSpacing),
     sectionSpacing: num(meta.sectionSpacing),
     paragraphSpacing: num(meta.paragraphSpacing),
+    dateFormat:
+      dateFormat === "short" ||
+      dateFormat === "long" ||
+      dateFormat === "numeric" ||
+      dateFormat === "iso" ||
+      dateFormat === "year"
+        ? dateFormat
+        : undefined,
   };
 
   return out;

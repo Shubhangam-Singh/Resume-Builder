@@ -90,13 +90,40 @@ export type HideableSection =
   | "projects"
   | "certificates";
 
+/**
+ * A section key as stored in `sectionOrder` / `hiddenSections`. Built-in
+ * sections use their `HideableSection` name; user-defined sections use the
+ * form `custom:<id>` so they can be ordered and hidden alongside the rest.
+ */
+export type SectionKey = HideableSection | string;
+
+/** One entry inside a user-defined custom section (e.g. an award, a talk). */
+export interface CustomItem {
+  id: string;
+  name: string; // title, e.g. "Best Paper Award"
+  description: string; // subtitle / organization / short note
+  date: string; // "YYYY-MM" or free text
+  url: string;
+  highlights: string[];
+}
+
+/** A user-defined section (e.g. "Publications", "Volunteering", "Awards"). */
+export interface CustomSection {
+  id: string;
+  title: string;
+  items: CustomItem[];
+}
+
+/** How dates render across templates. */
+export type DateFormat = "short" | "long" | "numeric" | "iso" | "year";
+
 export interface ResumeMeta {
   template: string;
   lastModified: string;
   /** Sections hidden from the rendered PDF. Absent = nothing hidden. */
-  hiddenSections?: HideableSection[];
+  hiddenSections?: SectionKey[];
   /** Order body sections render in. Absent / partial = default order. */
-  sectionOrder?: HideableSection[];
+  sectionOrder?: SectionKey[];
   /** Accent color id (see theme.ts ACCENTS). Absent = template default. */
   themeColor?: string;
   /** Layout density preset. Absent = "standard". Quick-sets the spacing below. */
@@ -108,6 +135,8 @@ export interface ResumeMeta {
   lineSpacing?: number;
   sectionSpacing?: number;
   paragraphSpacing?: number;
+  /** How dates render. Absent = "short" ("Mar 2021"). */
+  dateFormat?: DateFormat;
 }
 
 export interface ResumeData {
@@ -117,6 +146,8 @@ export interface ResumeData {
   projects: ProjectEntry[];
   skills: SkillEntry[];
   certificates: CertificateEntry[];
+  /** User-defined sections. Absent on documents created before this feature. */
+  customSections?: CustomSection[];
   meta: ResumeMeta;
 }
 

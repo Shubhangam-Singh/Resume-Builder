@@ -3,6 +3,7 @@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { BasicsSection } from "./sections/BasicsSection";
 import { CertificatesSection } from "./sections/CertificatesSection";
+import { CustomSectionsEditor } from "./sections/CustomSectionsEditor";
 import { EducationSection } from "./sections/EducationSection";
 import { ProjectsSection } from "./sections/ProjectsSection";
 import { SkillsSection } from "./sections/SkillsSection";
@@ -15,12 +16,13 @@ const TABS = [
   { value: "skills", label: "Skills", Component: SkillsSection },
   { value: "projects", label: "Projects", Component: ProjectsSection },
   { value: "certificates", label: "Certs", Component: CertificatesSection },
+  { value: "custom", label: "Custom", Component: CustomSectionsEditor },
 ] as const;
 
 export function Editor() {
   return (
     <Tabs defaultValue="basics" className="flex h-full flex-col">
-      <TabsList className="grid h-auto w-full grid-cols-3 gap-1 sm:grid-cols-6">
+      <TabsList className="grid h-auto w-full grid-cols-4 gap-1 sm:grid-cols-7">
         {TABS.map((t) => (
           <TabsTrigger key={t.value} value={t.value} className="text-xs">
             {t.label}

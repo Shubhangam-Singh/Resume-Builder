@@ -1,5 +1,7 @@
 import type {
   CertificateEntry,
+  CustomItem,
+  CustomSection,
   EducationEntry,
   Profile,
   ProjectEntry,
@@ -66,6 +68,14 @@ export function emptyCertificate(): CertificateEntry {
   return { id: uid(), name: "", issuer: "", date: "", url: "" };
 }
 
+export function emptyCustomItem(): CustomItem {
+  return { id: uid(), name: "", description: "", date: "", url: "", highlights: [] };
+}
+
+export function emptyCustomSection(title = "New section"): CustomSection {
+  return { id: uid(), title, items: [emptyCustomItem()] };
+}
+
 /** A completely blank resume (used by "Start blank" / reset). */
 export function emptyResume(): ResumeData {
   return {
@@ -85,6 +95,7 @@ export function emptyResume(): ResumeData {
     projects: [],
     skills: [],
     certificates: [],
+    customSections: [],
     meta: {
       template: "ats-classic",
       lastModified: new Date().toISOString(),
@@ -205,6 +216,7 @@ export function sampleResume(): ResumeData {
         url: "",
       },
     ],
+    customSections: [],
     meta: {
       template: "ats-classic",
       lastModified: new Date().toISOString(),

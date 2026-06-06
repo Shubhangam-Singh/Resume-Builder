@@ -12,7 +12,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { resolveSectionOrder } from "@/lib/resume/sections";
+import { customIdFromKey, resolveSectionOrder } from "@/lib/resume/sections";
 import type { HideableSection } from "@/lib/resume/types";
 import { cn } from "@/lib/utils";
 import { useResumeStore } from "@/lib/store";
@@ -28,12 +28,22 @@ const LABELS: Record<HideableSection, string> = {
 
 export function SectionsMenu() {
   const meta = useResumeStore((s) => s.resume.meta);
+  const customSections = useResumeStore((s) => s.resume.customSections);
   const toggleSection = useResumeStore((s) => s.toggleSection);
   const moveSection = useResumeStore((s) => s.moveSection);
   const [open, setOpen] = useState(false);
 
-  const order = resolveSectionOrder(meta);
+  const order = resolveSectionOrder(meta, customSections ?? []);
   const hidden = new Set(meta.hiddenSections ?? []);
+
+  const labelFor = (key: string): string => {
+    const id = customIdFromKey(key);
+    if (id) {
+      const cs = (customSections ?? []).find((s) => s.id === id);
+      return cs?.title?.trim() || "Custom section";
+    }
+    return LABELS[key as HideableSection] ?? key;
+  };
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
@@ -65,7 +75,7 @@ export function SectionsMenu() {
                   variant="ghost"
                   size="icon"
                   className="h-8 w-8"
-                  aria-label={isHidden ? `Show ${LABELS[key]}` : `Hide ${LABELS[key]}`}
+                  aria-label={isHidden ? `Show ${labelFor(key)}` : `Hide ${labelFor(key)}`}
                   onClick={() => toggleSection(key)}
                 >
                   {isHidden ? (
@@ -80,13 +90,13 @@ export function SectionsMenu() {
                     isHidden && "text-muted-foreground line-through",
                   )}
                 >
-                  {LABELS[key]}
+                  {labelFor(key)}
                 </span>
                 <Button
                   variant="ghost"
                   size="icon"
                   className="h-8 w-8"
-                  aria-label={`Move ${LABELS[key]} up`}
+                  aria-label={`Move ${labelFor(key)} up`}
                   disabled={i === 0}
                   onClick={() => moveSection(key, -1)}
                 >
@@ -96,7 +106,7 @@ export function SectionsMenu() {
                   variant="ghost"
                   size="icon"
                   className="h-8 w-8"
-                  aria-label={`Move ${LABELS[key]} down`}
+                  aria-label={`Move ${labelFor(key)} down`}
                   disabled={i === order.length - 1}
                   onClick={() => moveSection(key, 1)}
                 >

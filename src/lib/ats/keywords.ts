@@ -94,6 +94,41 @@ export interface CoverageResult {
   coverage: number; // 0–100
 }
 
+export interface HighlightSegment {
+  text: string;
+  match: boolean;
+}
+
+/**
+ * Split text into segments, marking the runs that match any of the given terms.
+ * Used by the "tailored" view to highlight where a resume already covers a job
+ * description's keywords. Boundary-aware so it still matches "c++", ".net", etc.
+ */
+export function highlightMatches(
+  text: string,
+  terms: string[],
+): HighlightSegment[] {
+  const cleaned = terms.filter(Boolean);
+  if (!cleaned.length || !text) return [{ text, match: false }];
+  // Longest first so multi-word terms win over their prefixes.
+  const escaped = cleaned
+    .map(escapeRegExp)
+    .sort((a, b) => b.length - a.length);
+  const re = new RegExp(`(?<![a-z0-9])(${escaped.join("|")})(?![a-z0-9])`, "gi");
+
+  const segs: HighlightSegment[] = [];
+  let last = 0;
+  let m: RegExpExecArray | null;
+  while ((m = re.exec(text)) !== null) {
+    if (m.index > last) segs.push({ text: text.slice(last, m.index), match: false });
+    segs.push({ text: m[0], match: true });
+    last = m.index + m[0].length;
+    if (m.index === re.lastIndex) re.lastIndex++; // guard against zero-width
+  }
+  if (last < text.length) segs.push({ text: text.slice(last), match: false });
+  return segs;
+}
+
 /** Compare JD keywords against the resume text. */
 export function analyzeCoverage(jd: string, resumeText: string): CoverageResult {
   const keywords = extractKeywords(jd);

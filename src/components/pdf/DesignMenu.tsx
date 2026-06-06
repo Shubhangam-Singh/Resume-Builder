@@ -19,13 +19,23 @@ import {
   LINE_RANGE,
   SPACING_RANGE,
 } from "@/lib/resume/theme";
+import type { DateFormat } from "@/lib/resume/types";
 import { cn } from "@/lib/utils";
 import { useResumeStore } from "@/lib/store";
+
+const DATE_FORMATS: { id: DateFormat; label: string; example: string }[] = [
+  { id: "short", label: "Short month", example: "Mar 2021" },
+  { id: "long", label: "Full month", example: "March 2021" },
+  { id: "numeric", label: "Numeric", example: "03/2021" },
+  { id: "iso", label: "ISO", example: "2021-03" },
+  { id: "year", label: "Year only", example: "2021" },
+];
 
 export function DesignMenu() {
   const themeColor = useResumeStore((s) => s.resume.meta.themeColor);
   const density = useResumeStore((s) => s.resume.meta.density) ?? "standard";
   const fontFamily = useResumeStore((s) => s.resume.meta.fontFamily) ?? "helvetica";
+  const dateFormat = useResumeStore((s) => s.resume.meta.dateFormat) ?? "short";
   const fontScaleRaw = useResumeStore((s) => s.resume.meta.fontScale);
   const sectionRaw = useResumeStore((s) => s.resume.meta.sectionSpacing);
   const paragraphRaw = useResumeStore((s) => s.resume.meta.paragraphSpacing);
@@ -35,6 +45,7 @@ export function DesignMenu() {
   const setDensity = useResumeStore((s) => s.setDensity);
   const setFontFamily = useResumeStore((s) => s.setFontFamily);
   const setFontScale = useResumeStore((s) => s.setFontScale);
+  const setDateFormat = useResumeStore((s) => s.setDateFormat);
   const setSectionSpacing = useResumeStore((s) => s.setSectionSpacing);
   const setParagraphSpacing = useResumeStore((s) => s.setParagraphSpacing);
   const setLineSpacing = useResumeStore((s) => s.setLineSpacing);
@@ -125,6 +136,34 @@ export function DesignMenu() {
               {fontFamily === f.id && (
                 <Check className="h-3.5 w-3.5 shrink-0 text-primary" />
               )}
+            </button>
+          ))}
+        </div>
+
+        <DropdownMenuSeparator />
+
+        {/* Date format */}
+        <DropdownMenuLabel>Date format</DropdownMenuLabel>
+        <div className="flex flex-col gap-0.5 px-2 pb-2 pt-1">
+          {DATE_FORMATS.map((d) => (
+            <button
+              key={d.id}
+              type="button"
+              onClick={() => setDateFormat(d.id)}
+              className={cn(
+                "flex items-center justify-between rounded-md px-2 py-1 text-left text-xs transition-colors",
+                dateFormat === d.id ? "bg-accent font-medium" : "hover:bg-accent/50",
+              )}
+            >
+              <span>{d.label}</span>
+              <span className="flex items-center gap-1.5">
+                <span className="text-[10px] tabular-nums text-muted-foreground">
+                  {d.example}
+                </span>
+                {dateFormat === d.id && (
+                  <Check className="h-3.5 w-3.5 shrink-0 text-primary" />
+                )}
+              </span>
             </button>
           ))}
         </div>

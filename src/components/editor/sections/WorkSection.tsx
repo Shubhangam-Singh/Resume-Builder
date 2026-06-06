@@ -3,9 +3,9 @@
 import { useResumeStore } from "@/lib/store";
 import {
   AddButton,
+  BulletEditor,
   EntryCard,
   FieldRow,
-  ListField,
   TextField,
 } from "../fields";
 
@@ -74,12 +74,12 @@ export function WorkSection() {
               hint="Leave empty if this is your current role."
             />
           </FieldRow>
-          <ListField
+          <BulletEditor
             label="Highlights"
             value={w.highlights}
             onChange={(v) => updateEntry("work", w.id, { highlights: v })}
-            placeholder={"One achievement per line.\nStart with an action verb and quantify when you can."}
-            rows={5}
+            placeholder="Start with an action verb and quantify when you can."
+            hint="Drag the handle to reorder bullets."
             aiContext={`${w.position || "role"}${w.name ? ` at ${w.name}` : ""}`}
           />
         </EntryCard>

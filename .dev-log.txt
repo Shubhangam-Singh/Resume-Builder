@@ -1,0 +1,22 @@
+﻿
+> resumeforge@0.1.0 predev
+> node scripts/copy-pdf-worker.mjs
+
+[copy-pdf-worker] D:\ResumeBuild\node_modules\pdfjs-dist\build\pdf.worker.min.mjs -> D:\ResumeBuild\public\pdf.worker.min.mjs
+
+> resumeforge@0.1.0 dev
+> next dev
+
+node.exe :  ⚠ Port 3000 is in use, trying 3001 instead.
+At line:1 char:1
++ & "C:\Program Files\nodejs/node.exe" "C:\Program Files\nodejs/node_mo ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: ( ⚠ Port 3000 is...g 3001 instead.:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+ ⚠ Port 3001 is in use, trying 3002 instead.
+  ▲ Next.js 14.2.35
+  - Local:        http://localhost:3002
+
+ ✓ Starting...
+ ✓ Ready in 1600ms

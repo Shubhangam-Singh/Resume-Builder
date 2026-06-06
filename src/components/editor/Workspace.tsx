@@ -13,10 +13,12 @@ import { ThemeToggle } from "@/components/ThemeToggle";
 import { cn } from "@/lib/utils";
 import { useMediaQuery } from "@/lib/use-media-query";
 import { useResumePersistence } from "@/lib/persist/useResumePersistence";
+import { CompletenessBadge } from "./CompletenessBadge";
 import { Editor } from "./Editor";
 import { MoreMenu } from "./MoreMenu";
 import { ResumeManager } from "./ResumeManager";
 import { SectionsMenu } from "./SectionsMenu";
+import { UndoRedo } from "./UndoRedo";
 
 type MobileView = "edit" | "preview";
 
@@ -65,6 +67,8 @@ export function Workspace() {
             <ShieldCheck className="h-3.5 w-3.5" />
             Runs entirely in your browser
           </span>
+          <CompletenessBadge />
+          <UndoRedo />
           <ResumeManager />
           <ThemeToggle />
           <ImportResume />

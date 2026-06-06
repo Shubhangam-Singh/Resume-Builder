@@ -25,7 +25,14 @@ export interface SavedDoc {
 
 let dbPromise: Promise<IDBPDatabase> | null = null;
 
-function getDb(): Promise<IDBPDatabase> | null {
+/**
+ * The shared key/value object store. Resume documents, version-history
+ * snapshots, and the application tracker all live here under namespaced keys
+ * (`doc:`, `snap:`, `app:`), so no schema migration is needed to add features.
+ */
+export const KV_STORE = STORE;
+
+export function getDb(): Promise<IDBPDatabase> | null {
   if (typeof indexedDB === "undefined") return null; // SSR / unsupported
   if (!dbPromise) {
     dbPromise = openDB(DB_NAME, DB_VERSION, {

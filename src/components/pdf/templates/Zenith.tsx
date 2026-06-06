@@ -7,11 +7,15 @@ import {
   View,
 } from "@react-pdf/renderer";
 
-import { formatDateRange, formatMonthYear } from "@/lib/resume/format";
-import { resolveSectionOrder } from "@/lib/resume/sections";
+import {
+  formatDateRange as fmtRange,
+  formatMonthYear as fmtMonth,
+} from "@/lib/resume/format";
+import { customIdFromKey, resolveSectionOrder } from "@/lib/resume/sections";
 import { makeScale, resolveAccent, resolveFont, type ResolvedFont, type Scale } from "@/lib/resume/theme";
 import { ensureFontRegistered } from "@/lib/resume/fonts";
-import type { HideableSection, ResumeData } from "@/lib/resume/types";
+import type { ResumeData, SectionKey } from "@/lib/resume/types";
+import { CustomSectionView } from "./CustomSection";
 import { contactItems, degreeLine, sectionPresence } from "./shared";
 
 /**
@@ -112,7 +116,11 @@ export function Zenith({ data }: { data: ResumeData }) {
   const items = contactItems(basics);
   const accent = resolveAccent(data.meta.themeColor, DEFAULT_ACCENT);
   const font = resolveFont(data.meta.fontFamily);
-  const styles = makeStyles(accent, makeScale(data.meta), font);
+  const sc = makeScale(data.meta);
+  const styles = makeStyles(accent, sc, font);
+  const dateFormat = data.meta.dateFormat;
+  const formatDateRange = (s: string, e: string) => fmtRange(s, e, dateFormat);
+  const formatMonthYear = (v: string) => fmtMonth(v, dateFormat);
 
   const Row = ({ title, children }: { title: string; children: React.ReactNode }) => (
     <View style={styles.row}>
@@ -123,7 +131,7 @@ export function Zenith({ data }: { data: ResumeData }) {
     </View>
   );
 
-  const renderSection = (key: HideableSection): React.ReactNode => {
+  const renderSection = (key: SectionKey): React.ReactNode => {
     switch (key) {
       case "summary":
         return has.summary ? (
@@ -252,8 +260,22 @@ export function Zenith({ data }: { data: ResumeData }) {
             ))}
           </Row>
         ) : null;
-      default:
-        return null;
+      default: {
+        const id = customIdFromKey(key);
+        const cs = id
+          ? (data.customSections ?? []).find((s) => s.id === id)
+          : null;
+        return cs ? (
+          <CustomSectionView
+            key={key}
+            section={cs}
+            accent={accent}
+            sc={sc}
+            font={font}
+            dateFormat={dateFormat}
+          />
+        ) : null;
+      }
     }
   };
 
@@ -284,7 +306,7 @@ export function Zenith({ data }: { data: ResumeData }) {
           ) : null}
         </View>
 
-        {resolveSectionOrder(data.meta).map(renderSection)}
+        {resolveSectionOrder(data.meta, data.customSections ?? []).map(renderSection)}
       </Page>
     </Document>
   );
