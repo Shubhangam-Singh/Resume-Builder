@@ -105,11 +105,10 @@ export const metadata: Metadata = {
     apple: "/apple-touch-icon.png",
   },
 
-  // ── Verification tokens (add yours after verifying in Search Console) ─────
-  // verification: {
-  //   google: "YOUR_GOOGLE_SEARCH_CONSOLE_TOKEN",
-  //   bing: "YOUR_BING_WEBMASTER_TOKEN",
-  // },
+  // ── Verification tokens ───────────────────────────────────────────────────
+  verification: {
+    google: "fVK8ixrdHyqMaOINqbjN8j05j1zetE_Z456_-bPalqo",
+  },
 };
 
 export default function RootLayout({
