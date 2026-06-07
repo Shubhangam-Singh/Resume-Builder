@@ -7,10 +7,12 @@ import {
   FileText,
   FileType,
   History,
+  LayoutTemplate,
   Link2,
   MoreHorizontal,
   Printer,
   RotateCcw,
+  Share2,
   Sparkles,
   Upload,
   Wand2,
@@ -18,8 +20,11 @@ import {
 
 import { AiSettings } from "@/components/ai/AiSettings";
 import { ApplyTracker } from "@/components/editor/ApplyTracker";
+import { RoleSamples } from "@/components/editor/RoleSamples";
+import { ShareDialog } from "@/components/editor/ShareDialog";
 import { VersionHistory } from "@/components/editor/VersionHistory";
 import { LinkedInImport } from "@/components/import/LinkedInImport";
+import { Wizard } from "@/components/onboarding/Wizard";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -43,6 +48,9 @@ export function MoreMenu() {
   const [versionOpen, setVersionOpen] = useState(false);
   const [trackerOpen, setTrackerOpen] = useState(false);
   const [linkedinOpen, setLinkedinOpen] = useState(false);
+  const [shareOpen, setShareOpen] = useState(false);
+  const [roleSamplesOpen, setRoleSamplesOpen] = useState(false);
+  const [wizardOpen, setWizardOpen] = useState(false);
 
   async function handleJsonFile(file: File | undefined) {
     if (!file) return;
@@ -103,6 +111,10 @@ export function MoreMenu() {
             <Download />
             Export as JSON
           </DropdownMenuItem>
+          <DropdownMenuItem onSelect={() => setShareOpen(true)}>
+            <Share2 />
+            Share as link…
+          </DropdownMenuItem>
 
           <DropdownMenuSeparator />
           <DropdownMenuLabel>Import</DropdownMenuLabel>
@@ -131,6 +143,15 @@ export function MoreMenu() {
           </DropdownMenuItem>
 
           <DropdownMenuSeparator />
+          <DropdownMenuLabel>Start fresh</DropdownMenuLabel>
+          <DropdownMenuItem onSelect={() => setWizardOpen(true)}>
+            <Wand2 />
+            Resume wizard (guided)…
+          </DropdownMenuItem>
+          <DropdownMenuItem onSelect={() => setRoleSamplesOpen(true)}>
+            <LayoutTemplate />
+            Start from a role template…
+          </DropdownMenuItem>
           <DropdownMenuItem
             onSelect={() =>
               confirmThen(
@@ -160,6 +181,9 @@ export function MoreMenu() {
       <VersionHistory open={versionOpen} onOpenChange={setVersionOpen} />
       <ApplyTracker open={trackerOpen} onOpenChange={setTrackerOpen} />
       <LinkedInImport open={linkedinOpen} onOpenChange={setLinkedinOpen} />
+      <ShareDialog open={shareOpen} onOpenChange={setShareOpen} />
+      <RoleSamples open={roleSamplesOpen} onOpenChange={setRoleSamplesOpen} />
+      <Wizard open={wizardOpen} onOpenChange={setWizardOpen} />
 
       <input
         ref={inputRef}

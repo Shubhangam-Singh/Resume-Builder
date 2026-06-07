@@ -2,9 +2,11 @@
 
 import { useEffect, useId, useState } from "react";
 import {
+  AlertTriangle,
   ChevronDown,
   ChevronUp,
   GripVertical,
+  Info,
   Plus,
   Trash2,
 } from "lucide-react";
@@ -15,6 +17,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { commaToList, linesToList } from "@/lib/resume/format";
+import { checkText } from "@/lib/writing/check";
 import { cn } from "@/lib/utils";
 
 const SEP = ""; // join separator used only for cheap array comparison
@@ -179,6 +182,86 @@ export function ListField({
   );
 }
 
+/** Inline writing-quality indicator shown per-bullet. */
+function BulletHint({ text }: { text: string }) {
+  if (!text.trim()) return null;
+  const issues = checkText(text, "");
+  if (!issues.length) return null;
+  const hasWarn = issues.some((i) => i.severity === "warn");
+  const tip = issues.map((i) => i.message).join("\n");
+  return (
+    <div
+      title={tip}
+      role="img"
+      aria-label={tip}
+      className={cn(
+        "mt-1.5 flex-shrink-0 cursor-help",
+        hasWarn ? "text-amber-500" : "text-sky-400",
+      )}
+    >
+      {hasWarn ? (
+        <AlertTriangle className="h-3.5 w-3.5" />
+      ) : (
+        <Info className="h-3.5 w-3.5" />
+      )}
+    </div>
+  );
+}
+
+/**
+ * Writing hints bar for a multi-line text field (e.g. the summary). Shows a
+ * compact count + first message; click to expand the full list.
+ */
+export function WritingHintBar({ text }: { text: string }) {
+  const [open, setOpen] = useState(false);
+  if (!text.trim()) return null;
+  const issues = checkText(text, "");
+  if (!issues.length) return null;
+  const warns = issues.filter((i) => i.severity === "warn");
+  const infos = issues.filter((i) => i.severity === "info");
+  const label =
+    warns.length > 0
+      ? `${warns.length} writing suggestion${warns.length > 1 ? "s" : ""}`
+      : `${infos.length} tip${infos.length > 1 ? "s" : ""}`;
+  return (
+    <div className="mt-1 space-y-1">
+      <button
+        type="button"
+        onClick={() => setOpen((o) => !o)}
+        className={cn(
+          "flex items-center gap-1.5 text-xs font-medium",
+          warns.length > 0 ? "text-amber-600 dark:text-amber-400" : "text-sky-500",
+        )}
+      >
+        {warns.length > 0 ? (
+          <AlertTriangle className="h-3 w-3" />
+        ) : (
+          <Info className="h-3 w-3" />
+        )}
+        {label}
+        <span className="text-muted-foreground">{open ? "▲" : "▼"}</span>
+      </button>
+      {open && (
+        <ul className="space-y-0.5 pl-1">
+          {issues.map((issue, i) => (
+            <li
+              key={i}
+              className={cn(
+                "text-xs",
+                issue.severity === "warn"
+                  ? "text-amber-700 dark:text-amber-300"
+                  : "text-muted-foreground",
+              )}
+            >
+              {issue.severity === "warn" ? "⚠ " : "ℹ "} {issue.message}
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  );
+}
+
 /**
  * Bullet editor: one row per bullet with a drag handle (reorder), up/down
  * buttons (touch/keyboard-friendly), and per-bullet delete — plus the optional
@@ -274,6 +357,7 @@ export function BulletEditor({
               onChange={(e) => updateRow(i, e.target.value)}
               className="min-h-0 flex-1 resize-y py-1.5"
             />
+            <BulletHint text={row} />
             <div className="flex flex-col">
               <Button
                 type="button"

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Eye, FileText, Loader2, ShieldCheck, SquarePen } from "lucide-react";
 
 import { DownloadButton } from "@/components/pdf/DownloadButton";
@@ -13,6 +13,9 @@ import { ThemeToggle } from "@/components/ThemeToggle";
 import { cn } from "@/lib/utils";
 import { useMediaQuery } from "@/lib/use-media-query";
 import { useResumePersistence } from "@/lib/persist/useResumePersistence";
+import { Wizard, wizardIsDone, markWizardDone } from "@/components/onboarding/Wizard";
+import { clearShareParam, decodeResumeFromUrl } from "@/lib/share/url";
+import { useResumeStore } from "@/lib/store";
 import { CompletenessBadge } from "./CompletenessBadge";
 import { Editor } from "./Editor";
 import { MoreMenu } from "./MoreMenu";
@@ -24,8 +27,37 @@ type MobileView = "edit" | "preview";
 
 export function Workspace() {
   const hydrated = useResumePersistence();
+  const setResume = useResumeStore((s) => s.setResume);
   const [mobileView, setMobileView] = useState<MobileView>("edit");
   const isDesktop = useMediaQuery("(min-width: 1024px)");
+  const [wizardOpen, setWizardOpen] = useState(false);
+
+  // After hydration: (1) load any ?r= shared resume, (2) auto-show wizard for new users.
+  useEffect(() => {
+    if (!hydrated) return;
+
+    decodeResumeFromUrl().then((shared) => {
+      if (shared) {
+        setResume(shared);
+        clearShareParam();
+        // Don't interrupt a shared-link visit with the wizard
+        markWizardDone();
+        return;
+      }
+      // Show wizard only for first-time visitors (no IndexedDB data yet)
+      if (!wizardIsDone()) {
+        setWizardOpen(true);
+      }
+    });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [hydrated]);
+
+  function handleWizardClose(v: boolean) {
+    setWizardOpen(v);
+    // Mark wizard as seen whether they finished it or skipped it
+    if (!v) markWizardDone();
+  }
+
   // Mount the preview only when it's actually visible — on mobile this avoids
   // rasterizing the PDF in the background while the user is editing.
   const showPreview = isDesktop || mobileView === "preview";
@@ -132,6 +164,9 @@ export function Workspace() {
           label="Preview"
         />
       </nav>
+
+      {/* Guided wizard — auto-shown for first-time visitors */}
+      <Wizard open={wizardOpen} onOpenChange={handleWizardClose} />
     </div>
   );
 }

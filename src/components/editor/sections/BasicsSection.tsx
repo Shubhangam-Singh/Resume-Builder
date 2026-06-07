@@ -8,6 +8,7 @@ import {
   FieldRow,
   TextAreaField,
   TextField,
+  WritingHintBar,
 } from "../fields";
 
 export function BasicsSection() {
@@ -92,6 +93,7 @@ export function BasicsSection() {
         placeholder="A 2–3 sentence overview of who you are and what you do."
         rows={4}
       />
+      <WritingHintBar text={basics.summary} />
 
       <div className="space-y-3">
         <div>

@@ -78,7 +78,7 @@ const COMMON_TYPOS: Record<string, string> = {
 
 const PRONOUNS = /\b(i|me|my|mine|myself)\b/i;
 
-function checkText(text: string, where: string): WritingIssue[] {
+export function checkText(text: string, where: string): WritingIssue[] {
   const issues: WritingIssue[] = [];
   const trimmed = text.trim();
   if (!trimmed) return issues;
