@@ -93,7 +93,10 @@ export function MoreMenu() {
             <MoreHorizontal />
           </Button>
         </DropdownMenuTrigger>
-        <DropdownMenuContent align="end" className="w-56">
+        <DropdownMenuContent
+          align="end"
+          className="w-56 max-h-[85vh] overflow-y-auto"
+        >
           <DropdownMenuLabel>Export</DropdownMenuLabel>
           <DropdownMenuItem onSelect={() => void exportDocx()}>
             <FileType />

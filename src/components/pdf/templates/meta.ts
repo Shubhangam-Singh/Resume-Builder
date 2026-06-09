@@ -86,6 +86,20 @@ export const TEMPLATES: TemplateMeta[] = [
       "Editorial layout with section labels in a slim left margin. May reduce ATS compatibility.",
     atsSafe: false,
   },
+  {
+    id: "ivy-league",
+    name: "Ivy League",
+    description:
+      "A highly formal, academic, and corporate-standard template with traditional headings. ATS-safe.",
+    atsSafe: true,
+  },
+  {
+    id: "metro",
+    name: "Metro Dashboard",
+    description:
+      "A grid-based layout wrapping major sections in thin card-like borders. May reduce ATS compatibility.",
+    atsSafe: false,
+  },
 ];
 
 export const DEFAULT_TEMPLATE_ID = "ats-classic";

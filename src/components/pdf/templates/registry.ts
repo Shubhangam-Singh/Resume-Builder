@@ -7,6 +7,8 @@ import { Compact } from "./Compact";
 import { Designer } from "./Designer";
 import { Elegant } from "./Elegant";
 import { Executive } from "./Executive";
+import { IvyLeague } from "./IvyLeague";
+import { Metro } from "./Metro";
 import { Modern } from "./Modern";
 import { Sidebar } from "./Sidebar";
 import { Timeline } from "./Timeline";
@@ -27,6 +29,8 @@ const COMPONENTS: Record<string, ComponentType<{ data: ResumeData }>> = {
   banner: Banner,
   executive: Executive,
   elegant: Elegant,
+  "ivy-league": IvyLeague,
+  metro: Metro,
   timeline: Timeline,
   zenith: Zenith,
 };

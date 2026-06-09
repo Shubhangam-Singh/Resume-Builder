@@ -1,0 +1,360 @@
+import {
+  Document,
+  Link,
+  Page,
+  StyleSheet,
+  Text,
+  View,
+} from "@react-pdf/renderer";
+
+import {
+  formatDateRange as fmtRange,
+  formatLocation,
+  formatMonthYear as fmtMonth,
+} from "@/lib/resume/format";
+import { customIdFromKey, resolveSectionOrder } from "@/lib/resume/sections";
+import {
+  makeScale,
+  resolveAccent,
+  resolveFont,
+  type ResolvedFont,
+  type Scale,
+} from "@/lib/resume/theme";
+import { ensureFontRegistered } from "@/lib/resume/fonts";
+import type { ResumeData, SectionKey } from "@/lib/resume/types";
+import { CustomSectionView } from "./CustomSection";
+import { sectionPresence } from "./shared";
+
+const TEXT = "#000000";
+const MUTED = "#333333";
+const DEFAULT_ACCENT = "#000000"; // Ivy League defaults to black
+
+function makeStyles(accent: string, sc: Scale, font: ResolvedFont) {
+  return StyleSheet.create({
+    page: {
+      paddingTop: sc.s(36),
+      paddingBottom: sc.s(40),
+      paddingHorizontal: sc.s(48),
+      fontFamily: font.regular,
+      fontSize: sc.f(10.5), // Slightly larger body for traditional look
+      color: TEXT,
+      lineHeight: sc.l(1.3),
+    },
+
+    header: { marginBottom: sc.s(10), textAlign: "center" },
+    name: {
+      fontSize: sc.f(24),
+      fontFamily: font.bold,
+      letterSpacing: 0.5,
+      lineHeight: sc.l(1.2),
+      marginBottom: sc.s(2),
+    },
+    label: {
+      fontSize: sc.f(12),
+      color: MUTED,
+      marginTop: sc.s(1),
+      lineHeight: sc.l(1.2),
+    },
+    contact: {
+      fontSize: sc.f(10),
+      color: TEXT,
+      marginTop: sc.s(4),
+      textAlign: "center",
+    },
+    contactSep: { color: TEXT, marginHorizontal: sc.s(4) },
+    link: { color: TEXT, textDecoration: "none" },
+
+    section: { marginTop: sc.s(10) },
+    sectionTitle: {
+      fontSize: sc.f(11),
+      fontFamily: font.bold,
+      color: accent,
+      letterSpacing: 0.5,
+      textTransform: "uppercase",
+      borderBottomWidth: 1,
+      borderBottomColor: TEXT,
+      paddingBottom: sc.s(2),
+      marginBottom: sc.s(6),
+      textAlign: "center", // Traditional formal style often centers headings or left aligns. Let's left align for readability, but can be centered. Let's stick to left aligned but full width line.
+    },
+
+    summary: { fontSize: sc.f(10.5), color: TEXT },
+
+    entry: { marginBottom: sc.sp(8) },
+    entryHeaderRow: {
+      flexDirection: "row",
+      justifyContent: "space-between",
+      alignItems: "flex-end",
+      marginBottom: sc.s(2),
+    },
+    entryTitle: { fontSize: sc.f(11), fontFamily: font.bold },
+    entrySubtitle: { fontSize: sc.f(11), fontStyle: "italic", color: TEXT },
+    entryMeta: {
+      fontSize: sc.f(10.5),
+      color: TEXT,
+      textAlign: "right",
+      flexShrink: 0,
+      marginLeft: sc.s(12),
+    },
+    entrySummary: { fontSize: sc.f(10.5), marginTop: sc.s(2) },
+
+    bulletRow: { flexDirection: "row", marginTop: sc.sp(2.5), paddingRight: sc.s(4) },
+    bulletGlyph: { width: sc.s(12), fontSize: sc.f(10.5), color: TEXT },
+    bulletText: { flex: 1, fontSize: sc.f(10.5) },
+
+    skillRow: { flexDirection: "row", marginBottom: sc.s(2) },
+    skillCategory: { fontFamily: font.bold, fontSize: sc.f(10.5) },
+    skillKeywords: { flex: 1, fontSize: sc.f(10.5) },
+  });
+}
+
+type Styles = ReturnType<typeof makeStyles>;
+
+function Bullet({ styles, children }: { styles: Styles; children: string }) {
+  return (
+    <View style={styles.bulletRow}>
+      <Text style={styles.bulletGlyph}>•</Text>
+      <Text style={styles.bulletText}>{children}</Text>
+    </View>
+  );
+}
+
+function SectionTitle({ styles, children }: { styles: Styles; children: string }) {
+  return <Text style={styles.sectionTitle}>{children}</Text>;
+}
+
+function joinNodes(nodes: React.ReactNode[], styles: Styles) {
+  return nodes.map((node, i) => (
+    <Text key={i}>
+      {i > 0 ? <Text style={styles.contactSep}>{"  |  "}</Text> : null}
+      {node}
+    </Text>
+  ));
+}
+
+export function IvyLeague({ data }: { data: ResumeData }) {
+  ensureFontRegistered(data.meta.fontFamily);
+  const { basics, work, education, projects, skills, certificates } = data;
+  const locationText = formatLocation(basics.location);
+  const has = sectionPresence(data);
+  const accent = resolveAccent(data.meta.themeColor, DEFAULT_ACCENT);
+  const font = resolveFont(data.meta.fontFamily);
+  const sc = makeScale(data.meta);
+  const styles = makeStyles(accent, sc, font);
+  const dateFormat = data.meta.dateFormat;
+  const formatDateRange = (s: string, e: string) => fmtRange(s, e, dateFormat);
+  const formatMonthYear = (v: string) => fmtMonth(v, dateFormat);
+
+  const contactNodes: React.ReactNode[] = [];
+  if (basics.email)
+    contactNodes.push(
+      <Link style={styles.link} src={`mailto:${basics.email}`}>
+        {basics.email}
+      </Link>,
+    );
+  if (basics.phone) contactNodes.push(<Text>{basics.phone}</Text>);
+  if (locationText) contactNodes.push(<Text>{locationText}</Text>);
+  if (basics.url)
+    contactNodes.push(
+      <Link style={styles.link} src={basics.url}>
+        {basics.url.replace(/^https?:\/\//, "")}
+      </Link>,
+    );
+  basics.profiles.forEach((p) => {
+    const text = p.url || p.username || p.network;
+    if (!text) return;
+    contactNodes.push(
+      p.url ? (
+        <Link style={styles.link} src={p.url}>
+          {`${p.network}: ${p.username || p.url.replace(/^https?:\/\//, "")}`}
+        </Link>
+      ) : (
+        <Text>{`${p.network}: ${p.username}`}</Text>
+      ),
+    );
+  });
+
+  const renderSection = (key: SectionKey): React.ReactNode => {
+    switch (key) {
+      case "summary":
+        return has.summary ? (
+          <View key="summary" style={styles.section}>
+            <SectionTitle styles={styles}>Summary</SectionTitle>
+            <Text style={styles.summary}>{basics.summary}</Text>
+          </View>
+        ) : null;
+      case "work":
+        return has.work ? (
+          <View key="work" style={styles.section}>
+            <SectionTitle styles={styles}>Experience</SectionTitle>
+            {work.map((w) => {
+              const dates = formatDateRange(w.startDate, w.endDate);
+              return (
+                <View key={w.id} style={styles.entry} wrap={false}>
+                  <View style={styles.entryHeaderRow}>
+                    <View style={{ flex: 1, flexDirection: "row", alignItems: "flex-end", flexWrap: "wrap" }}>
+                      <Text style={styles.entryTitle}>{w.name || w.position}</Text>
+                      {w.position && w.name ? (
+                        <Text style={styles.entrySubtitle}>{`, ${w.position}`}</Text>
+                      ) : null}
+                    </View>
+                    {dates || w.location ? (
+                      <Text style={styles.entryMeta}>
+                        {[dates, w.location].filter(Boolean).join("  ·  ")}
+                      </Text>
+                    ) : null}
+                  </View>
+                  {w.summary ? (
+                    <Text style={styles.entrySummary}>{w.summary}</Text>
+                  ) : null}
+                  {w.highlights.map((h, i) => (
+                    <Bullet key={i} styles={styles}>
+                      {h}
+                    </Bullet>
+                  ))}
+                </View>
+              );
+            })}
+          </View>
+        ) : null;
+      case "education":
+        return has.education ? (
+          <View key="education" style={styles.section}>
+            <SectionTitle styles={styles}>Education</SectionTitle>
+            {education.map((e) => {
+              const dates = formatDateRange(e.startDate, e.endDate);
+              const degree = [e.studyType, e.area].filter(Boolean).join(", ");
+              return (
+                <View key={e.id} style={styles.entry} wrap={false}>
+                  <View style={styles.entryHeaderRow}>
+                    <View style={{ flex: 1, flexDirection: "row", alignItems: "flex-end", flexWrap: "wrap" }}>
+                      <Text style={styles.entryTitle}>{e.institution}</Text>
+                      {degree ? (
+                        <Text style={styles.entrySubtitle}>{`, ${degree}`}</Text>
+                      ) : null}
+                    </View>
+                    {dates || e.score ? (
+                      <Text style={styles.entryMeta}>
+                        {[dates, e.score].filter(Boolean).join("  ·  ")}
+                      </Text>
+                    ) : null}
+                  </View>
+                  {e.courses.length ? (
+                    <Text style={styles.entrySummary}>
+                      {`Relevant coursework: ${e.courses.join(", ")}`}
+                    </Text>
+                  ) : null}
+                </View>
+              );
+            })}
+          </View>
+        ) : null;
+      case "projects":
+        return has.projects ? (
+          <View key="projects" style={styles.section}>
+            <SectionTitle styles={styles}>Projects</SectionTitle>
+            {projects.map((p) => (
+              <View key={p.id} style={styles.entry} wrap={false}>
+                <View style={styles.entryHeaderRow}>
+                  <View style={{ flex: 1 }}>
+                    <Text style={styles.entryTitle}>
+                      {p.url ? (
+                        <Link style={styles.link} src={p.url}>
+                          {p.name}
+                        </Link>
+                      ) : (
+                        p.name
+                      )}
+                    </Text>
+                  </View>
+                  {p.keywords.length ? (
+                    <Text style={styles.entryMeta}>{p.keywords.join(", ")}</Text>
+                  ) : null}
+                </View>
+                {p.description ? (
+                  <Text style={styles.entrySummary}>{p.description}</Text>
+                ) : null}
+                {p.highlights.map((h, i) => (
+                  <Bullet key={i} styles={styles}>
+                    {h}
+                  </Bullet>
+                ))}
+              </View>
+            ))}
+          </View>
+        ) : null;
+      case "skills":
+        return has.skills ? (
+          <View key="skills" style={styles.section}>
+            <SectionTitle styles={styles}>Skills</SectionTitle>
+            {skills.map((s) => (
+              <View key={s.id} style={styles.skillRow}>
+                {s.name ? (
+                  <Text style={styles.skillCategory}>{`${s.name}: `}</Text>
+                ) : null}
+                <Text style={styles.skillKeywords}>{s.keywords.join(", ")}</Text>
+              </View>
+            ))}
+          </View>
+        ) : null;
+      case "certificates":
+        return has.certificates ? (
+          <View key="certificates" style={styles.section}>
+            <SectionTitle styles={styles}>Certifications</SectionTitle>
+            {certificates.map((c) => {
+              const meta = [c.issuer, formatMonthYear(c.date)]
+                .filter(Boolean)
+                .join("  ·  ");
+              return (
+                <View key={c.id} style={styles.entry} wrap={false}>
+                  <View style={styles.entryHeaderRow}>
+                    <View style={{ flex: 1 }}>
+                      <Text style={styles.entryTitle}>{c.name}</Text>
+                    </View>
+                    {meta ? <Text style={styles.entryMeta}>{meta}</Text> : null}
+                  </View>
+                </View>
+              );
+            })}
+          </View>
+        ) : null;
+      default: {
+        const id = customIdFromKey(key);
+        const cs = id
+          ? (data.customSections ?? []).find((s) => s.id === id)
+          : null;
+        return cs ? (
+          <CustomSectionView
+            key={key}
+            section={cs}
+            accent={accent}
+            sc={sc}
+            font={font}
+            dateFormat={dateFormat}
+          />
+        ) : null;
+      }
+    }
+  };
+
+  return (
+    <Document
+      title={basics.name ? `${basics.name} — Resume` : "Resume"}
+      author={basics.name || undefined}
+    >
+      <Page size="LETTER" style={styles.page}>
+        <View style={styles.header}>
+          <Text style={styles.name}>{basics.name || "Your Name"}</Text>
+          {basics.label ? <Text style={styles.label}>{basics.label}</Text> : null}
+          {contactNodes.length > 0 ? (
+            <Text style={styles.contact}>{joinNodes(contactNodes, styles)}</Text>
+          ) : null}
+        </View>
+
+        {resolveSectionOrder(data.meta, data.customSections ?? []).map(
+          renderSection,
+        )}
+      </Page>
+    </Document>
+  );
+}
