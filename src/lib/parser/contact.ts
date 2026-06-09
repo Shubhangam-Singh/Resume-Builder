@@ -12,7 +12,7 @@ const PERSONAL_MAIL_DOMAINS = [
 
 export function extractEmail(text: string): string {
   const re = /[A-Za-z0-9._%+\-]+@[A-Za-z0-9.\-]+\.[A-Za-z]{2,}/g;
-  const matches = [...text.matchAll(re)].map((m) => m[0]);
+  const matches = text.match(re) || [];
 
   if (matches.length === 0) {
     // Last resort: an email split across lines in a multi-column extract.
@@ -62,10 +62,12 @@ function normalizeCore(digits: string): string {
 
 export function extractPhone(text: string): string {
   for (const pat of PHONE_PATTERNS) {
+    pat.lastIndex = 0;
     let bestRaw: string | null = null;
     let bestScore = -Infinity;
 
-    for (const m of text.matchAll(pat)) {
+    let m;
+    while ((m = pat.exec(text)) !== null) {
       const raw = m[0].trim();
       const digits = raw.replace(/\D/g, "");
       if (digits.length < 10 || digits.length > 13) continue;
@@ -100,7 +102,9 @@ export function extractPhone(text: string): string {
 function extractPhoneFromCollapsed(text: string): string {
   const collapsed = text.replace(/\s*\n\s*/g, "");
   for (const pat of PHONE_PATTERNS) {
-    for (const m of collapsed.matchAll(pat)) {
+    pat.lastIndex = 0;
+    let m;
+    while ((m = pat.exec(collapsed)) !== null) {
       const raw = m[0].trim();
       const digits = raw.replace(/\D/g, "");
       if (digits.length < 10 || digits.length > 13) continue;

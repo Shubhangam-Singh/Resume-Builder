@@ -450,7 +450,7 @@ export function extractProfiles(text: string): Profile[] {
 }
 
 export function extractWebsite(text: string): string {
-  const matches = [...text.matchAll(/https?:\/\/[^\s|]+/gi)].map((m) => m[0]);
+  const matches = text.match(/https?:\/\/[^\s|]+/gi) || [];
   const site = matches.find(
     (u) => !/(linkedin|github|gitlab|twitter|facebook|instagram)\.com/i.test(u),
   );
