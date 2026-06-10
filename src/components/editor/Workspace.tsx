@@ -22,6 +22,7 @@ import { MoreMenu } from "./MoreMenu";
 import { ResumeManager } from "./ResumeManager";
 import { SectionsMenu } from "./SectionsMenu";
 import { UndoRedo } from "./UndoRedo";
+import { AgencyBrandingDialog } from "./AgencyBrandingDialog";
 
 type MobileView = "edit" | "preview";
 
@@ -82,9 +83,12 @@ export function Workspace() {
             <FileText className="h-5 w-5" />
           </div>
           <div className="min-w-0">
-            <h1 className="truncate text-sm font-semibold leading-tight lg:text-base">
-              ResumeForge
-            </h1>
+            <div className="flex items-center gap-2">
+              <h1 className="truncate text-sm font-semibold leading-tight lg:text-base">
+                ResumeForge
+              </h1>
+              <AgencyBrandingDialog />
+            </div>
             <p className="hidden text-xs text-muted-foreground sm:block">
               Free, private, ATS-friendly resume builder
             </p>

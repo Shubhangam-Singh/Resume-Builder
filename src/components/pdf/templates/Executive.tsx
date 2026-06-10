@@ -1,5 +1,6 @@
 import {
   Document,
+  Image,
   Link,
   Page,
   StyleSheet,
@@ -16,7 +17,7 @@ import { makeScale, resolveAccent, resolveFont, type ResolvedFont, type Scale } 
 import { ensureFontRegistered } from "@/lib/resume/fonts";
 import type { ResumeData, SectionKey } from "@/lib/resume/types";
 import { CustomSectionView } from "./CustomSection";
-import { contactItems, degreeLine, sectionPresence } from "./shared";
+import { agencyContactLine, contactItems, degreeLine, sectionPresence } from "./shared";
 
 /**
  * Executive — a structured two-part header (name left, contact stacked right)
@@ -124,7 +125,9 @@ export function Executive({ data }: { data: ResumeData }) {
   ensureFontRegistered(data.meta.fontFamily);
   const { basics, work, education, projects, skills, certificates } = data;
   const has = sectionPresence(data);
-  const items = contactItems(basics);
+  const agencyBranding = data.meta.agencyBranding;
+  const agencyContact = agencyContactLine(agencyBranding);
+  const items = contactItems(basics, agencyBranding);
   const accent = resolveAccent(data.meta.themeColor, DEFAULT_ACCENT);
   const font = resolveFont(data.meta.fontFamily);
   const sc = makeScale(data.meta);
@@ -300,8 +303,11 @@ export function Executive({ data }: { data: ResumeData }) {
               <Text style={styles.label}>{basics.label}</Text>
             ) : null}
           </View>
-          {items.length > 0 ? (
+          {items.length > 0 || agencyContact || agencyBranding?.logoBase64 ? (
             <View style={styles.headerRight}>
+              {agencyBranding?.logoBase64 && (
+                <Image src={agencyBranding.logoBase64} style={{ width: sc.s(80), height: sc.s(50), objectFit: "contain", objectPositionX: "right", marginBottom: sc.s(4) }} />
+              )}
               {items.map((it, i) =>
                 it.href ? (
                   <Link key={i} src={it.href} style={styles.contactLine}>
@@ -313,6 +319,11 @@ export function Executive({ data }: { data: ResumeData }) {
                   </Text>
                 ),
               )}
+              {agencyContact ? (
+                <Text style={[styles.contactLine, { marginTop: sc.s(2), fontSize: sc.f(8) }]}>
+                  {agencyContact}
+                </Text>
+              ) : null}
             </View>
           ) : null}
         </View>

@@ -1,8 +1,10 @@
 "use client";
 
+import { useMemo } from "react";
 import dynamic from "next/dynamic";
 
 import { useResumeStore } from "@/lib/store";
+import { useAgencyStore } from "@/lib/agency-store";
 import { useDebounce } from "@/lib/use-debounce";
 
 // Lazy-load the renderers (heavy, browser-only). ssr:false is required because
@@ -31,8 +33,22 @@ function PreviewSkeleton({ message }: { message: string }) {
  */
 export function LivePreview({ useImages = false }: { useImages?: boolean }) {
   const resume = useResumeStore((s) => s.resume);
+  const agencyBranding = useAgencyStore((s) => s.branding);
+
+  // useMemo prevents creating a new object reference on every render.
+  // Without this, useDebounce's [value] dependency always changes →
+  // setDebounced fires → re-render → new object → infinite loop (flicker).
+  const mergedResume = useMemo(
+    () => ({
+      ...resume,
+      meta: { ...resume.meta, agencyBranding },
+    }),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [resume, agencyBranding]
+  );
+
   // Debounce so the PDF isn't regenerated on every keystroke.
-  const debounced = useDebounce(resume, 400);
+  const debounced = useDebounce(mergedResume, 400);
 
   return (
     <div className="h-full w-full">

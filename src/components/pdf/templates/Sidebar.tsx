@@ -22,7 +22,7 @@ import {
 } from "@/lib/resume/theme";
 import { ensureFontRegistered } from "@/lib/resume/fonts";
 import type { ResumeData, SectionKey } from "@/lib/resume/types";
-import { contactItems, degreeLine, sectionPresence } from "./shared";
+import { agencyContactLine, contactItems, degreeLine, sectionPresence } from "./shared";
 import { CustomSectionView } from "./CustomSection";
 
 /**
@@ -185,7 +185,9 @@ export function Sidebar({ data }: { data: ResumeData }) {
   ensureFontRegistered(data.meta.fontFamily);
   const { basics, work, education, projects, skills, certificates } = data;
   const has = sectionPresence(data);
-  const items = contactItems(basics);
+  const agencyBranding = data.meta.agencyBranding;
+  const agencyContact = agencyContactLine(agencyBranding);
+  const items = contactItems(basics, agencyBranding);
   const accent = resolveAccent(data.meta.themeColor, DEFAULT_ACCENT);
   const font = resolveFont(data.meta.fontFamily);
   const sc = makeScale(data.meta);
@@ -374,7 +376,7 @@ export function Sidebar({ data }: { data: ResumeData }) {
               <Text style={styles.sideRole}>{basics.label}</Text>
             ) : null}
 
-            {items.length > 0 ? (
+            {items.length > 0 || agencyContact ? (
               <View style={styles.sideSection}>
                 <Text style={styles.sideTitle}>Contact</Text>
                 {items.map((it, i) =>
@@ -388,6 +390,11 @@ export function Sidebar({ data }: { data: ResumeData }) {
                     </Text>
                   ),
                 )}
+                {agencyContact ? (
+                  <Text style={[styles.sideLine, { marginTop: sc.s(2), fontSize: sc.f(8) }]}>
+                    {agencyContact}
+                  </Text>
+                ) : null}
               </View>
             ) : null}
 
@@ -395,7 +402,14 @@ export function Sidebar({ data }: { data: ResumeData }) {
           </View>
 
           {/* Main column */}
-          <View style={styles.main}>{mainOrder.map(renderSection)}</View>
+          <View style={styles.main}>
+            {agencyBranding?.logoBase64 && (
+              <View style={{ alignItems: "flex-end", marginBottom: sc.s(10) }}>
+                <Image src={agencyBranding.logoBase64} style={{ width: sc.s(80), height: sc.s(50), objectFit: "contain", objectPositionX: "right" }} />
+              </View>
+            )}
+            {mainOrder.map(renderSection)}
+          </View>
         </View>
       </Page>
     </Document>

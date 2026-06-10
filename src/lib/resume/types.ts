@@ -117,6 +117,13 @@ export interface CustomSection {
 /** How dates render across templates. */
 export type DateFormat = "short" | "long" | "numeric" | "iso" | "year";
 
+export interface AgencyBranding {
+  enabled: boolean;
+  logoBase64?: string;
+  hrPhone?: string;
+  hrEmail?: string;
+}
+
 export interface ResumeMeta {
   template: string;
   lastModified: string;
@@ -137,6 +144,8 @@ export interface ResumeMeta {
   paragraphSpacing?: number;
   /** How dates render. Absent = "short" ("Mar 2021"). */
   dateFormat?: DateFormat;
+  /** Ephemeral overlay for recruiter agency branding mode */
+  agencyBranding?: AgencyBranding;
 }
 
 export interface ResumeData {

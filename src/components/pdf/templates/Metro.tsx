@@ -1,5 +1,6 @@
 import {
   Document,
+  Image,
   Link,
   Page,
   StyleSheet,
@@ -23,7 +24,7 @@ import {
 import { ensureFontRegistered } from "@/lib/resume/fonts";
 import type { ResumeData, SectionKey } from "@/lib/resume/types";
 import { CustomSectionView } from "./CustomSection";
-import { sectionPresence } from "./shared";
+import { agencyContactLine, sectionPresence } from "./shared";
 
 const TEXT = "#111827";
 const MUTED = "#4B5563";
@@ -187,33 +188,38 @@ export function Metro({ data }: { data: ResumeData }) {
   const formatMonthYear = (v: string) => fmtMonth(v, dateFormat);
 
   const contactNodes: React.ReactNode[] = [];
-  if (basics.email)
-    contactNodes.push(
-      <Link style={styles.link} src={`mailto:${basics.email}`}>
-        {basics.email}
-      </Link>,
-    );
-  if (basics.phone) contactNodes.push(<Text>{basics.phone}</Text>);
-  if (locationText) contactNodes.push(<Text>{locationText}</Text>);
-  if (basics.url)
-    contactNodes.push(
-      <Link style={styles.link} src={basics.url}>
-        {basics.url.replace(/^https?:\/\//, "")}
-      </Link>,
-    );
-  basics.profiles.forEach((p) => {
-    const text = p.url || p.username || p.network;
-    if (!text) return;
-    contactNodes.push(
-      p.url ? (
-        <Link style={styles.link} src={p.url}>
-          {`${p.network}: ${p.username || p.url.replace(/^https?:\/\//, "")}`}
-        </Link>
-      ) : (
-        <Text>{`${p.network}: ${p.username}`}</Text>
-      ),
-    );
-  });
+  const agencyBranding = data.meta.agencyBranding;
+  const agencyContact = agencyContactLine(agencyBranding);
+
+  if (!agencyBranding?.enabled) {
+    if (basics.email)
+      contactNodes.push(
+        <Link style={styles.link} src={`mailto:${basics.email}`}>
+          {basics.email}
+        </Link>,
+      );
+    if (basics.phone) contactNodes.push(<Text>{basics.phone}</Text>);
+    if (locationText) contactNodes.push(<Text>{locationText}</Text>);
+    if (basics.url)
+      contactNodes.push(
+        <Link style={styles.link} src={basics.url}>
+          {basics.url.replace(/^https?:\/\//, "")}
+        </Link>,
+      );
+    basics.profiles.forEach((p) => {
+      const text = p.url || p.username || p.network;
+      if (!text) return;
+      contactNodes.push(
+        p.url ? (
+          <Link style={styles.link} src={p.url}>
+            {`${p.network}: ${p.username || p.url.replace(/^https?:\/\//, "")}`}
+          </Link>
+        ) : (
+          <Text>{`${p.network}: ${p.username}`}</Text>
+        ),
+      );
+    });
+  }
 
   const renderSection = (key: SectionKey): React.ReactNode => {
     switch (key) {
@@ -386,7 +392,7 @@ export function Metro({ data }: { data: ResumeData }) {
       author={basics.name || undefined}
     >
       <Page size="LETTER" style={styles.page}>
-        <View style={styles.headerCard}>
+        <View style={agencyBranding?.logoBase64 ? [styles.headerCard, { paddingRight: sc.s(90) }] : styles.headerCard}>
           <Text style={styles.name}>{basics.name || "Your Name"}</Text>
           {basics.label ? <Text style={styles.label}>{basics.label}</Text> : null}
           {contactNodes.length > 0 ? (
@@ -396,6 +402,12 @@ export function Metro({ data }: { data: ResumeData }) {
               ))}
             </View>
           ) : null}
+          {agencyContact ? (
+            <Text style={{ color: MUTED, fontSize: sc.f(9), marginTop: sc.s(8) }}>{agencyContact}</Text>
+          ) : null}
+          {agencyBranding?.logoBase64 && (
+            <Image src={agencyBranding.logoBase64} style={{ position: "absolute", top: sc.s(16), right: sc.s(16), width: sc.s(80), height: sc.s(50), objectFit: "contain", objectPositionX: "right" }} />
+          )}
         </View>
 
         {resolveSectionOrder(data.meta, data.customSections ?? []).map(

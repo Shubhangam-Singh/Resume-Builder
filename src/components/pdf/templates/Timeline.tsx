@@ -1,5 +1,6 @@
 import {
   Document,
+  Image,
   Link,
   Page,
   StyleSheet,
@@ -16,7 +17,7 @@ import { makeScale, resolveAccent, resolveFont, type ResolvedFont, type Scale } 
 import { ensureFontRegistered } from "@/lib/resume/fonts";
 import type { ResumeData, SectionKey } from "@/lib/resume/types";
 import { CustomSectionView } from "./CustomSection";
-import { contactItems, degreeLine, sectionPresence } from "./shared";
+import { agencyContactLine, contactItems, degreeLine, sectionPresence } from "./shared";
 
 /**
  * Timeline — single column where dated sections (experience, education,
@@ -135,7 +136,9 @@ export function Timeline({ data }: { data: ResumeData }) {
   ensureFontRegistered(data.meta.fontFamily);
   const { basics, work, education, projects, skills, certificates } = data;
   const has = sectionPresence(data);
-  const items = contactItems(basics);
+  const agencyBranding = data.meta.agencyBranding;
+  const agencyContact = agencyContactLine(agencyBranding);
+  const items = contactItems(basics, agencyBranding);
   const accent = resolveAccent(data.meta.themeColor, DEFAULT_ACCENT);
   const font = resolveFont(data.meta.fontFamily);
   const sc = makeScale(data.meta);
@@ -304,7 +307,7 @@ export function Timeline({ data }: { data: ResumeData }) {
       author={basics.name || undefined}
     >
       <Page size="LETTER" style={styles.page}>
-        <View style={styles.header}>
+        <View style={agencyBranding?.logoBase64 ? [styles.header, { paddingRight: sc.s(90) }] : styles.header}>
           <Text style={styles.name}>{basics.name || "Your Name"}</Text>
           {basics.label ? <Text style={styles.label}>{basics.label}</Text> : null}
           {items.length > 0 ? (
@@ -323,6 +326,12 @@ export function Timeline({ data }: { data: ResumeData }) {
               ))}
             </Text>
           ) : null}
+          {agencyContact ? (
+            <Text style={[styles.contact, { marginTop: sc.s(4), fontSize: sc.f(8) }]}>{agencyContact}</Text>
+          ) : null}
+          {agencyBranding?.logoBase64 && (
+            <Image src={agencyBranding.logoBase64} style={{ position: "absolute", top: 0, right: 0, width: sc.s(80), height: sc.s(50), objectFit: "contain", objectPositionX: "right" }} />
+          )}
         </View>
 
         {resolveSectionOrder(data.meta, data.customSections ?? []).map(renderSection)}

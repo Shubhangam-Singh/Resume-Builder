@@ -23,7 +23,7 @@ import {
 import { ensureFontRegistered } from "@/lib/resume/fonts";
 import type { ResumeData, SectionKey } from "@/lib/resume/types";
 import { CustomSectionView } from "./CustomSection";
-import { contactItems, degreeLine, sectionPresence } from "./shared";
+import { agencyContactLine, contactItems, degreeLine, sectionPresence } from "./shared";
 
 /**
  * Banner — a bold accent header band (photo + name + contact) over a single
@@ -168,7 +168,9 @@ export function Banner({ data }: { data: ResumeData }) {
   ensureFontRegistered(data.meta.fontFamily);
   const { basics, work, education, projects, skills, certificates } = data;
   const has = sectionPresence(data);
-  const items = contactItems(basics);
+  const agencyBranding = data.meta.agencyBranding;
+  const agencyContact = agencyContactLine(agencyBranding);
+  const items = contactItems(basics, agencyBranding);
   const accent = resolveAccent(data.meta.themeColor, DEFAULT_ACCENT);
   const font = resolveFont(data.meta.fontFamily);
   const sc = makeScale(data.meta);
@@ -347,7 +349,7 @@ export function Banner({ data }: { data: ResumeData }) {
               </Text>
             </View>
           )}
-          <View style={styles.bannerText}>
+          <View style={agencyBranding?.logoBase64 ? [styles.bannerText, { paddingRight: sc.s(90) }] : styles.bannerText}>
             <Text style={styles.name}>{basics.name || "Your Name"}</Text>
             {basics.label ? <Text style={styles.role}>{basics.label}</Text> : null}
             {items.length > 0 ? (
@@ -368,7 +370,15 @@ export function Banner({ data }: { data: ResumeData }) {
                 ))}
               </Text>
             ) : null}
+            {agencyContact ? (
+              <Text style={[styles.bannerContact, { marginTop: sc.s(2), fontSize: sc.f(8) }]}>
+                {agencyContact}
+              </Text>
+            ) : null}
           </View>
+          {agencyBranding?.logoBase64 && (
+            <Image src={agencyBranding.logoBase64} style={{ position: "absolute", top: sc.s(22), right: sc.s(40), width: sc.s(80), height: sc.s(50), objectFit: "contain", objectPositionX: "right" }} />
+          )}
         </View>
 
         <View style={styles.body}>

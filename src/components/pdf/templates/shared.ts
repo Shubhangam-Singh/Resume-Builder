@@ -1,5 +1,5 @@
 import { formatLocation } from "@/lib/resume/format";
-import type { Basics, ResumeData } from "@/lib/resume/types";
+import type { Basics, ResumeData, AgencyBranding } from "@/lib/resume/types";
 
 /** One piece of contact info, optionally linkable. */
 export interface ContactItem {
@@ -14,13 +14,18 @@ const stripProtocol = (url: string) => url.replace(/^https?:\/\//, "");
  * so each template can render them in its own style without duplicating the
  * conditional logic.
  */
-export function contactItems(basics: Basics): ContactItem[] {
+export function contactItems(basics: Basics, agencyBranding?: AgencyBranding): ContactItem[] {
+  if (agencyBranding?.enabled) {
+    return [];
+  }
+
   const items: ContactItem[] = [];
   if (basics.email)
     items.push({ text: basics.email, href: `mailto:${basics.email}` });
   if (basics.phone) items.push({ text: basics.phone });
   const loc = formatLocation(basics.location);
   if (loc) items.push({ text: loc });
+
   if (basics.url)
     items.push({ text: stripProtocol(basics.url), href: basics.url });
   for (const p of basics.profiles) {
@@ -29,6 +34,15 @@ export function contactItems(basics: Basics): ContactItem[] {
     if (text) items.push({ text, href: p.url || undefined });
   }
   return items;
+}
+
+export function agencyContactLine(branding?: AgencyBranding): string {
+  if (!branding?.enabled) return "";
+  const parts = [];
+  if (branding.hrEmail) parts.push(branding.hrEmail);
+  if (branding.hrPhone) parts.push(branding.hrPhone);
+  if (parts.length === 0) return "";
+  return "Sourced via: " + parts.join("  |  ");
 }
 
 /**

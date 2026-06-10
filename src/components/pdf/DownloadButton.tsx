@@ -5,6 +5,7 @@ import { Download, Loader2 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { useResumeStore } from "@/lib/store";
+import { useAgencyStore } from "@/lib/agency-store";
 
 function makeFileName(name: string): string {
   const base = (name || "resume")
@@ -16,6 +17,7 @@ function makeFileName(name: string): string {
 
 export function DownloadButton() {
   const resume = useResumeStore((s) => s.resume);
+  const agencyBranding = useAgencyStore((s) => s.branding);
   const [busy, setBusy] = useState(false);
 
   async function handleDownload() {
@@ -26,7 +28,11 @@ export function DownloadButton() {
         import("@react-pdf/renderer"),
         import("./ResumeDocument"),
       ]);
-      const blob = await pdf(buildResumeDocument(resume)).toBlob();
+      const mergedResume = {
+        ...resume,
+        meta: { ...resume.meta, agencyBranding },
+      };
+      const blob = await pdf(buildResumeDocument(mergedResume)).toBlob();
 
       const url = URL.createObjectURL(blob);
       const link = document.createElement("a");

@@ -1,5 +1,6 @@
 import {
   Document,
+  Image,
   Link,
   Page,
   StyleSheet,
@@ -22,6 +23,7 @@ import {
 import { ensureFontRegistered } from "@/lib/resume/fonts";
 import type { ResumeData, SectionKey } from "@/lib/resume/types";
 import {
+  agencyContactLine,
   contactItems,
   degreeLine,
   sectionPresence,
@@ -163,7 +165,9 @@ export function Designer({ data }: { data: ResumeData }) {
   ensureFontRegistered(data.meta.fontFamily);
   const { basics, work, education, projects, skills, certificates } = data;
   const has = sectionPresence(data);
-  const items = contactItems(basics);
+  const agencyBranding = data.meta.agencyBranding;
+  const agencyContact = agencyContactLine(agencyBranding);
+  const items = contactItems(basics, agencyBranding);
   const accent = resolveAccent(data.meta.themeColor, DEFAULT_ACCENT);
   const font = resolveFont(data.meta.fontFamily);
   const sc = makeScale(data.meta);
@@ -334,7 +338,7 @@ export function Designer({ data }: { data: ResumeData }) {
         <View style={styles.row}>
           {/* Sidebar */}
           <View style={styles.sidebar}>
-            {items.length > 0 ? (
+            {items.length > 0 || agencyContact ? (
               <View style={styles.sideSection}>
                 <Text style={styles.sideTitle}>Contact</Text>
                 {items.map((it, i) =>
@@ -348,6 +352,11 @@ export function Designer({ data }: { data: ResumeData }) {
                     </Text>
                   ),
                 )}
+                {agencyContact ? (
+                  <Text style={[styles.sideLine, { marginTop: sc.s(2), fontSize: sc.f(8) }]}>
+                    {agencyContact}
+                  </Text>
+                ) : null}
               </View>
             ) : null}
             {sidebarOrder.map(renderSection)}
@@ -355,10 +364,17 @@ export function Designer({ data }: { data: ResumeData }) {
 
           {/* Main column */}
           <View style={styles.main}>
-            <Text style={styles.name}>{basics.name || "Your Name"}</Text>
-            {basics.label ? (
-              <Text style={styles.label}>{basics.label}</Text>
-            ) : null}
+            <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start", marginBottom: sc.s(10) }}>
+              <View style={{ flex: 1, paddingRight: sc.s(10) }}>
+                <Text style={styles.name}>{basics.name || "Your Name"}</Text>
+                {basics.label ? (
+                  <Text style={styles.label}>{basics.label}</Text>
+                ) : null}
+              </View>
+              {agencyBranding?.logoBase64 && (
+                <Image src={agencyBranding.logoBase64} style={{ width: sc.s(80), height: sc.s(50), objectFit: "contain", objectPositionX: "right" }} />
+              )}
+            </View>
             {mainOrder.map(renderSection)}
           </View>
         </View>
