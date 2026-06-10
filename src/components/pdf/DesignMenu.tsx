@@ -1,6 +1,7 @@
 "use client";
 
-import { Check, Palette } from "lucide-react";
+import { useRef } from "react";
+import { Check, Palette, Trash2, Upload } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -18,6 +19,7 @@ import {
   FONT_SIZES,
   LINE_RANGE,
   SPACING_RANGE,
+  THEME_PRESETS,
 } from "@/lib/resume/theme";
 import type { DateFormat } from "@/lib/resume/types";
 import { cn } from "@/lib/utils";
@@ -33,8 +35,10 @@ const DATE_FORMATS: { id: DateFormat; label: string; example: string }[] = [
 
 export function DesignMenu() {
   const themeColor = useResumeStore((s) => s.resume.meta.themeColor);
+  const secondaryColor = useResumeStore((s) => s.resume.meta.secondaryColor);
   const density = useResumeStore((s) => s.resume.meta.density) ?? "standard";
   const fontFamily = useResumeStore((s) => s.resume.meta.fontFamily) ?? "helvetica";
+  const uploadedFont = useResumeStore((s) => s.resume.meta.uploadedFont);
   const dateFormat = useResumeStore((s) => s.resume.meta.dateFormat) ?? "short";
   const fontScaleRaw = useResumeStore((s) => s.resume.meta.fontScale);
   const sectionRaw = useResumeStore((s) => s.resume.meta.sectionSpacing);
@@ -42,6 +46,7 @@ export function DesignMenu() {
   const lineRaw = useResumeStore((s) => s.resume.meta.lineSpacing);
 
   const setThemeColor = useResumeStore((s) => s.setThemeColor);
+  const setThemePreset = useResumeStore((s) => s.setThemePreset);
   const setDensity = useResumeStore((s) => s.setDensity);
   const setFontFamily = useResumeStore((s) => s.setFontFamily);
   const setFontScale = useResumeStore((s) => s.setFontScale);
@@ -49,6 +54,31 @@ export function DesignMenu() {
   const setSectionSpacing = useResumeStore((s) => s.setSectionSpacing);
   const setParagraphSpacing = useResumeStore((s) => s.setParagraphSpacing);
   const setLineSpacing = useResumeStore((s) => s.setLineSpacing);
+  const setUploadedFont = useResumeStore((s) => s.setUploadedFont);
+
+  const fontInputRef = useRef<HTMLInputElement>(null);
+
+  function handleFontFile(file: File | undefined) {
+    if (!file) return;
+    if (!file.name.endsWith(".ttf")) {
+      alert("Only .ttf files are supported by the PDF renderer.");
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = () => {
+      const dataUrl = reader.result as string;
+      // Derive family name from filename: "MyFont-Regular.ttf" → "MyFont-Regular"
+      const family = file.name.replace(/\.ttf$/i, "").replace(/[-_]/g, " ");
+      setUploadedFont({ family, dataUrl });
+      setFontFamily(family);
+    };
+    reader.readAsDataURL(file);
+  }
+
+  function removeCustomFont() {
+    setUploadedFont(undefined);
+    setFontFamily("helvetica");
+  }
 
   // Effective values: a granular field overrides the active density preset.
   const preset = DENSITY_PRESETS[density];
@@ -58,6 +88,7 @@ export function DesignMenu() {
   const lineSpacing = lineRaw ?? preset.lineSpacing;
 
   return (
+    <>
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <Button variant="ghost" size="sm" aria-label="Design: color, font, and spacing">
@@ -70,7 +101,36 @@ export function DesignMenu() {
         align="end"
         className="max-h-[80vh] w-72 overflow-y-auto"
       >
-        {/* Accent color */}
+        {/* Color theme presets */}
+        <DropdownMenuLabel>Color themes</DropdownMenuLabel>
+        <div className="grid grid-cols-2 gap-1.5 px-2 pb-2 pt-1">
+          {THEME_PRESETS.map((p) => {
+            const active = themeColor === p.accent && secondaryColor === p.secondary;
+            return (
+              <button
+                key={p.id}
+                type="button"
+                onClick={() => setThemePreset(p.accent, p.secondary)}
+                title={p.label}
+                className={cn(
+                  "flex items-center gap-2 rounded-md border px-2 py-1.5 text-left text-xs transition-colors",
+                  active ? "border-primary bg-accent font-medium" : "hover:bg-accent/50",
+                )}
+              >
+                <span className="flex shrink-0 overflow-hidden rounded-full" style={{ width: 20, height: 20 }}>
+                  <span className="flex-1" style={{ background: p.accent }} />
+                  <span className="flex-1" style={{ background: p.secondary }} />
+                </span>
+                <span className="truncate">{p.label}</span>
+                {active && <Check className="ml-auto h-3 w-3 shrink-0 text-primary" />}
+              </button>
+            );
+          })}
+        </div>
+
+        <DropdownMenuSeparator />
+
+        {/* Individual accent swatches */}
         <DropdownMenuLabel>Accent color</DropdownMenuLabel>
         <div className="flex flex-wrap gap-2 px-2 pb-2 pt-1">
           <Swatch
@@ -138,6 +198,41 @@ export function DesignMenu() {
               )}
             </button>
           ))}
+          {/* Uploaded custom font */}
+          {uploadedFont && (
+            <div
+              className={cn(
+                "flex items-center justify-between rounded-md px-2 py-1 text-xs",
+                fontFamily === uploadedFont.family ? "bg-accent font-medium" : "",
+              )}
+            >
+              <button
+                type="button"
+                onClick={() => setFontFamily(uploadedFont.family)}
+                className="flex-1 text-left"
+              >
+                <span className="truncate">{uploadedFont.family}</span>
+                <span className="ml-1 text-[10px] text-muted-foreground">(custom)</span>
+              </button>
+              <button
+                type="button"
+                onClick={removeCustomFont}
+                title="Remove custom font"
+                className="ml-1 text-muted-foreground hover:text-destructive"
+              >
+                <Trash2 className="h-3 w-3" />
+              </button>
+            </div>
+          )}
+          {/* Upload custom font */}
+          <button
+            type="button"
+            onClick={() => fontInputRef.current?.click()}
+            className="flex items-center gap-1.5 rounded-md px-2 py-1 text-left text-xs text-muted-foreground hover:bg-accent/50 hover:text-foreground transition-colors"
+          >
+            <Upload className="h-3 w-3" />
+            Upload .ttf font…
+          </button>
         </div>
 
         <DropdownMenuSeparator />
@@ -213,7 +308,19 @@ export function DesignMenu() {
         />
       </DropdownMenuContent>
     </DropdownMenu>
-  );
+
+    <input
+      ref={fontInputRef}
+      type="file"
+      accept=".ttf"
+      className="hidden"
+      onChange={(e) => {
+        handleFontFile(e.target.files?.[0]);
+        e.target.value = "";
+      }}
+    />
+  </>
+);
 }
 
 function Slider({

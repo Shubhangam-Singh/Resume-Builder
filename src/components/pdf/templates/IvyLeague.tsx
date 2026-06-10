@@ -18,12 +18,13 @@ import { customIdFromKey, resolveSectionOrder } from "@/lib/resume/sections";
 import {
   makeScale,
   resolveAccent,
+  resolveSecondary,
   resolveFont,
   type ResolvedFont,
   type Scale,
 } from "@/lib/resume/theme";
 import { ensureFontRegistered } from "@/lib/resume/fonts";
-import type { ResumeData, SectionKey } from "@/lib/resume/types";
+import type { HighlightRule, ResumeData, SectionKey } from "@/lib/resume/types";
 import { CustomSectionView } from "./CustomSection";
 import { agencyContactLine, sectionPresence } from "./shared";
 
@@ -140,6 +141,7 @@ export function IvyLeague({ data }: { data: ResumeData }) {
   const locationText = formatLocation(basics.location);
   const has = sectionPresence(data);
   const accent = resolveAccent(data.meta.themeColor, DEFAULT_ACCENT);
+  const secondary = resolveSecondary(data.meta.secondaryColor);
   const font = resolveFont(data.meta.fontFamily);
   const sc = makeScale(data.meta);
   const styles = makeStyles(accent, sc, font);
@@ -172,10 +174,10 @@ export function IvyLeague({ data }: { data: ResumeData }) {
       contactNodes.push(
         p.url ? (
           <Link style={styles.link} src={p.url}>
-            {`${p.network}: ${p.username || p.url.replace(/^https?:\/\//, "")}`}
+            {`\${p.username || p.url.replace(/^https?:\/\//, "")}`}
           </Link>
         ) : (
-          <Text>{`${p.network}: ${p.username}`}</Text>
+          <Text>{`\${p.username}`}</Text>
         ),
       );
     });
@@ -299,7 +301,7 @@ export function IvyLeague({ data }: { data: ResumeData }) {
                 {s.name ? (
                   <Text style={styles.skillCategory}>{`${s.name}: `}</Text>
                 ) : null}
-                <Text style={styles.skillKeywords}>{s.keywords.join(", ")}</Text>
+                <Text style={styles.skillKeywords}>{s.keywords.join(", ")}{s.level ? ` · ${s.level}` : ""}</Text>
               </View>
             ))}
           </View>
@@ -352,7 +354,7 @@ export function IvyLeague({ data }: { data: ResumeData }) {
       <Page size="LETTER" style={styles.page}>
         <View style={agencyBranding?.logoBase64 ? [styles.header, { paddingLeft: sc.s(90), paddingRight: sc.s(90) }] : styles.header}>
           <Text style={styles.name}>{basics.name || "Your Name"}</Text>
-          {basics.label ? <Text style={styles.label}>{basics.label}</Text> : null}
+          {basics.label ? <Text style={secondary ? [styles.label, { color: secondary }] : styles.label}>{basics.label}</Text> : null}
           {contactNodes.length > 0 ? (
             <Text style={styles.contact}>{joinNodes(contactNodes, styles)}</Text>
           ) : null}

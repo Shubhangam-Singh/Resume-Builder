@@ -17,12 +17,13 @@ import { customIdFromKey, resolveSectionOrder } from "@/lib/resume/sections";
 import {
   makeScale,
   resolveAccent,
+  resolveSecondary,
   resolveFont,
   type ResolvedFont,
   type Scale,
 } from "@/lib/resume/theme";
 import { ensureFontRegistered } from "@/lib/resume/fonts";
-import type { ResumeData, SectionKey } from "@/lib/resume/types";
+import type { HighlightRule, ResumeData, SectionKey } from "@/lib/resume/types";
 import { CustomSectionView } from "./CustomSection";
 import { agencyContactLine, contactItems, degreeLine, sectionPresence } from "./shared";
 
@@ -173,6 +174,7 @@ export function Banner({ data }: { data: ResumeData }) {
   const agencyContact = agencyContactLine(agencyBranding);
   const items = contactItems(basics, agencyBranding);
   const accent = resolveAccent(data.meta.themeColor, DEFAULT_ACCENT);
+  const secondary = resolveSecondary(data.meta.secondaryColor);
   const font = resolveFont(data.meta.fontFamily);
   const sc = makeScale(data.meta);
   const styles = makeStyles(accent, sc, font);
@@ -290,7 +292,7 @@ export function Banner({ data }: { data: ResumeData }) {
                 {s.name ? (
                   <Text style={styles.skillCategory}>{`${s.name}: `}</Text>
                 ) : null}
-                <Text style={styles.skillKeywords}>{s.keywords.join(", ")}</Text>
+                <Text style={styles.skillKeywords}>{s.keywords.join(", ")}{s.level ? ` · ${s.level}` : ""}</Text>
               </View>
             ))}
           </View>
@@ -352,7 +354,7 @@ export function Banner({ data }: { data: ResumeData }) {
           )}
           <View style={agencyBranding?.logoBase64 ? [styles.bannerText, { paddingRight: sc.s(90) }] : styles.bannerText}>
             <Text style={styles.name}>{basics.name || "Your Name"}</Text>
-            {basics.label ? <Text style={styles.role}>{basics.label}</Text> : null}
+            {basics.label ? <Text style={secondary ? [styles.role, { color: secondary }] : styles.role}>{basics.label}</Text> : null}
             {items.length > 0 ? (
               <Text style={styles.bannerContact}>
                 {items.map((it, i) => (

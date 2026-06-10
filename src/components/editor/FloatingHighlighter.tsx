@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useResumeStore } from "@/lib/store";
 import { Highlighter } from "lucide-react";
 
@@ -21,11 +21,20 @@ export function FloatingHighlighter() {
     y: number;
   } | null>(null);
 
+  // Ref to the floating toolbar DOM node so we can check "click outside"
+  const toolbarRef = useRef<HTMLDivElement>(null);
+
   useEffect(() => {
-    function checkSelection(e?: MouseEvent | KeyboardEvent) {
+    function handleMouseUp(e: MouseEvent) {
+      // If the click is on our own toolbar, do nothing — let onClick handlers fire.
+      if (toolbarRef.current && toolbarRef.current.contains(e.target as Node)) {
+        return;
+      }
+
+      // Use a short delay so the browser updates selectionStart/End first.
       setTimeout(() => {
         const active = document.activeElement as HTMLInputElement | HTMLTextAreaElement;
-        
+
         if (
           active &&
           (active.tagName === "TEXTAREA" || active.tagName === "INPUT") &&
@@ -33,73 +42,52 @@ export function FloatingHighlighter() {
           active.selectionEnd !== null &&
           active.selectionEnd > active.selectionStart
         ) {
-          const text = active.value.substring(active.selectionStart, active.selectionEnd).trim();
-          
+          const text = active.value
+            .substring(active.selectionStart, active.selectionEnd)
+            .trim();
+
           if (text.length > 0) {
-            // Only update X and Y if triggered by a mouse/keyboard event
-            if (e) {
-              let x = 0;
-              let y = 0;
-              if ("clientX" in e) {
-                x = (e as MouseEvent).clientX;
-                y = (e as MouseEvent).clientY - 40;
-              } else {
-                const rect = active.getBoundingClientRect();
-                x = rect.left + rect.width / 2;
-                y = rect.top - 50;
-              }
-              setSelection({ text, x, y });
-            } else {
-              // If triggered by pure selectionchange (like moving mouse while holding),
-              // just silently update the text, but DON'T move the tooltip.
-              setSelection((prev) => (prev ? { ...prev, text } : null));
-            }
+            // Anchor the toolbar above the mouse-up position.
+            setSelection({ text, x: e.clientX, y: e.clientY - 50 });
             return;
           }
         }
-        
-        // Prevent clearing if focus shifts to our own buttons
-        const activeNow = document.activeElement;
-        if (activeNow && activeNow.closest && activeNow.closest("#floating-highlighter")) {
-          return;
-        }
 
+        // Clicked somewhere with no selection → hide the toolbar.
         setSelection(null);
       }, 10);
     }
 
-    function handleMouseUp(e: MouseEvent) {
-      // Ignore mouseup if it happens directly on the floating toolbar buttons
-      const target = e.target as HTMLElement;
-      if (target && target.closest && target.closest("#floating-highlighter")) {
-        return;
-      }
-      checkSelection(e);
-    }
-
-    function handleKeyUp(e: KeyboardEvent) {
-      // Only capture selection on navigation/selection keys
-      if (e.key === "Shift" || e.key.includes("Arrow")) {
-        checkSelection(e);
+    function handleMouseDown(e: MouseEvent) {
+      // If mousedown lands outside our toolbar, dismiss it.
+      // (We check before the click so the toolbar is gone before selectionchange fires.)
+      if (
+        selection !== null &&
+        toolbarRef.current &&
+        !toolbarRef.current.contains(e.target as Node)
+      ) {
+        // Don't setSelection(null) immediately — let handleMouseUp decide;
+        // otherwise a drag-to-select would flash the toolbar then hide it.
       }
     }
 
-    function handleSelectionChange() {
-      // Handles unselecting when clicking away
-      checkSelection();
+    // Dismiss when user presses Escape
+    function handleKeyDown(e: KeyboardEvent) {
+      if (e.key === "Escape") {
+        setSelection(null);
+      }
     }
 
     document.addEventListener("mouseup", handleMouseUp);
-    document.addEventListener("keyup", handleKeyUp);
-    document.addEventListener("selectionchange", handleSelectionChange);
+    document.addEventListener("mousedown", handleMouseDown);
+    document.addEventListener("keydown", handleKeyDown);
     return () => {
       document.removeEventListener("mouseup", handleMouseUp);
-      document.removeEventListener("keyup", handleKeyUp);
-      document.removeEventListener("selectionchange", handleSelectionChange);
+      document.removeEventListener("mousedown", handleMouseDown);
+      document.removeEventListener("keydown", handleKeyDown);
     };
-  }, []);
-
-  if (!selection) return null;
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selection]);
 
   function applyHighlight(colorHex: string) {
     if (!selection) return;
@@ -108,53 +96,67 @@ export function FloatingHighlighter() {
       (h) => h.text.toLowerCase() === selection.text.toLowerCase()
     );
 
-    let newHighlights;
-    if (exists) {
-      newHighlights = storeHighlights.map((h) =>
-        h.id === exists.id ? { ...h, color: colorHex } : h
-      );
-    } else {
-      newHighlights = [
-        ...storeHighlights,
-        { id: crypto.randomUUID(), text: selection.text, color: colorHex },
-      ];
-    }
+    const newHighlights = exists
+      ? storeHighlights.map((h) =>
+          h.id === exists.id ? { ...h, color: colorHex } : h
+        )
+      : [
+          ...storeHighlights,
+          { id: crypto.randomUUID(), text: selection.text, color: colorHex },
+        ];
 
     setHighlights(newHighlights);
+    // Keep the toolbar visible so the user can change color if they want.
   }
+
+  if (!selection) return null;
 
   return (
     <div
+      ref={toolbarRef}
       id="floating-highlighter"
-      className="fixed z-[100] flex items-center gap-1 rounded-full border bg-background px-2 py-1.5 shadow-xl animate-in fade-in zoom-in-95 duration-100"
+      className="fixed z-[9999] flex items-center gap-1.5 rounded-full border bg-background px-3 py-2 shadow-2xl"
       style={{
-        left: Math.max(10, selection.x - 70), // Center roughly above cursor
+        left: Math.max(10, Math.min(selection.x - 80, window.innerWidth - 200)),
         top: Math.max(10, selection.y),
+        // Keep it above the text
+        pointerEvents: "all",
+      }}
+      onMouseDown={(e) => {
+        // Prevent any mousedown inside the toolbar from clearing the text selection
+        e.preventDefault();
+        e.stopPropagation();
       }}
     >
-      <div className="flex items-center gap-1.5 border-r pr-2 mr-1">
-        <Highlighter className="h-3.5 w-3.5 text-muted-foreground" />
-      </div>
-      
+      <Highlighter className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+      <div className="mx-1 h-4 w-px bg-border" />
       {COLORS.map((c) => (
         <button
           key={c.id}
           type="button"
-          onMouseDown={(e) => {
-             // Prevents the textarea from losing focus when clicking a color
-             e.preventDefault();
-             e.stopPropagation();
-          }}
           onClick={(e) => {
             e.preventDefault();
             e.stopPropagation();
             applyHighlight(c.hex);
           }}
-          className="h-6 w-6 rounded-full shadow-sm transition-transform hover:scale-110 active:scale-95 border border-transparent"
+          className="h-6 w-6 rounded-full border border-black/10 shadow-sm transition-transform hover:scale-125 active:scale-95"
           style={{ backgroundColor: c.hex }}
-          title={`Highlight ${c.id}`}
+          title={`Highlight in ${c.id}`}
         />
       ))}
+      <div className="mx-1 h-4 w-px bg-border" />
+      <button
+        type="button"
+        onClick={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          setSelection(null);
+        }}
+        className="text-xs text-muted-foreground hover:text-foreground transition-colors px-1"
+        title="Dismiss"
+      >
+        ✕
+      </button>
     </div>
   );
 }

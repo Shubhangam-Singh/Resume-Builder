@@ -13,12 +13,15 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { diffResumes } from "@/lib/resume/diff";
+import { getTemplateMeta } from "@/components/pdf/templates/meta";
 import {
   deleteSnapshot,
   listSnapshots,
   saveSnapshot,
   type Snapshot,
 } from "@/lib/persist/snapshots";
+import { scoreResume } from "@/lib/ats/score";
+import type { ResumeData } from "@/lib/resume/types";
 import { useResumeStore } from "@/lib/store";
 
 export function VersionHistory({
@@ -99,6 +102,10 @@ export function VersionHistory({
             Save snapshot
           </Button>
         </div>
+
+        {!loading && snaps.length >= 1 && (
+          <ScoreSparkline snaps={snaps} currentResume={resume} />
+        )}
 
         {loading ? (
           <div className="flex items-center gap-2 py-8 text-sm text-muted-foreground">
@@ -184,5 +191,72 @@ export function VersionHistory({
         </p>
       </DialogContent>
     </Dialog>
+  );
+}
+
+function ScoreSparkline({
+  snaps,
+  currentResume,
+}: {
+  snaps: Snapshot[];
+  currentResume: ResumeData;
+}) {
+  const templateMeta = getTemplateMeta(currentResume.meta.template);
+  const snapScores = snaps.map((s) =>
+    scoreResume(s.data, templateMeta.atsSafe).overall,
+  );
+  const currentScore = scoreResume(currentResume, templateMeta.atsSafe).overall;
+  const allScores = [...snapScores, currentScore];
+
+  const W = 200, H = 40, PAD = 6;
+  const n = allScores.length;
+  const step = n > 1 ? (W - PAD * 2) / (n - 1) : 0;
+  const toX = (i: number) => PAD + i * step;
+  const toY = (v: number) => H - PAD - (v / 100) * (H - PAD * 2);
+
+  const pts = allScores.map((v, i) => `${toX(i)},${toY(v)}`).join(" ");
+  const color =
+    currentScore >= 80 ? "#16a34a" : currentScore >= 50 ? "#d97706" : "#dc2626";
+
+  return (
+    <div className="flex items-center gap-3 rounded-md border bg-muted/30 px-3 py-2">
+      <div className="flex-1">
+        <p className="mb-1 text-[10px] font-medium text-muted-foreground uppercase tracking-wide">
+          ATS score trend
+        </p>
+        <svg
+          width={W}
+          height={H}
+          viewBox={`0 0 ${W} ${H}`}
+          className="overflow-visible"
+        >
+          {n > 1 && (
+            <polyline
+              points={pts}
+              fill="none"
+              stroke="currentColor"
+              strokeWidth={1.5}
+              className="text-muted-foreground/30"
+            />
+          )}
+          {allScores.map((v, i) => (
+            <circle
+              key={i}
+              cx={toX(i)}
+              cy={toY(v)}
+              r={i === n - 1 ? 4 : 2.5}
+              fill={i === n - 1 ? color : "currentColor"}
+              className={i === n - 1 ? "" : "text-muted-foreground/40"}
+            />
+          ))}
+        </svg>
+      </div>
+      <div className="shrink-0 text-right">
+        <p className="text-2xl font-bold tabular-nums" style={{ color }}>
+          {currentScore}
+        </p>
+        <p className="text-[10px] text-muted-foreground">current ATS</p>
+      </div>
+    </div>
   );
 }

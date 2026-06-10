@@ -17,12 +17,13 @@ import { customIdFromKey, resolveSectionOrder } from "@/lib/resume/sections";
 import {
   makeScale,
   resolveAccent,
+  resolveSecondary,
   resolveFont,
   type ResolvedFont,
   type Scale,
 } from "@/lib/resume/theme";
 import { ensureFontRegistered } from "@/lib/resume/fonts";
-import type { ResumeData, SectionKey } from "@/lib/resume/types";
+import type { HighlightRule, ResumeData, SectionKey } from "@/lib/resume/types";
 import { agencyContactLine, contactItems, degreeLine, sectionPresence } from "./shared";
 import { CustomSectionView } from "./CustomSection";
 
@@ -190,6 +191,7 @@ export function Sidebar({ data }: { data: ResumeData }) {
   const agencyContact = agencyContactLine(agencyBranding);
   const items = contactItems(basics, agencyBranding);
   const accent = resolveAccent(data.meta.themeColor, DEFAULT_ACCENT);
+  const secondary = resolveSecondary(data.meta.secondaryColor);
   const font = resolveFont(data.meta.fontFamily);
   const sc = makeScale(data.meta);
   const styles = makeStyles(accent, sc, font);
@@ -211,7 +213,7 @@ export function Sidebar({ data }: { data: ResumeData }) {
                 {s.name ? (
                   <Text style={styles.sideItemTitle}>{s.name}</Text>
                 ) : null}
-                <Text style={styles.sideItemText}>{s.keywords.join(", ")}</Text>
+                <Text style={styles.sideItemText}>{s.keywords.join(", ")}{s.level ? ` · ${s.level}` : ""}</Text>
               </View>
             ))}
           </View>
@@ -374,7 +376,7 @@ export function Sidebar({ data }: { data: ResumeData }) {
             )}
             <Text style={styles.sideName}>{basics.name || "Your Name"}</Text>
             {basics.label ? (
-              <Text style={styles.sideRole}>{basics.label}</Text>
+              <Text style={secondary ? [styles.sideRole, { color: secondary }] : styles.sideRole}>{basics.label}</Text>
             ) : null}
 
             {items.length > 0 || agencyContact ? (

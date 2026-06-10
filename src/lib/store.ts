@@ -105,6 +105,7 @@ interface ResumeStore {
   toggleSection: (section: SectionKey) => void;
   moveSection: (section: SectionKey, dir: -1 | 1) => void;
   setThemeColor: (color: string | undefined) => void;
+  setThemePreset: (accent: string, secondary: string) => void;
   setDensity: (density: "compact" | "standard" | "loose") => void;
   setFontFamily: (fontFamily: string) => void;
   setFontScale: (value: number) => void;
@@ -113,6 +114,7 @@ interface ResumeStore {
   setParagraphSpacing: (value: number) => void;
   setDateFormat: (value: DateFormat) => void;
   setHighlights: (highlights: HighlightRule[]) => void;
+  setUploadedFont: (font: { family: string; dataUrl: string } | undefined) => void;
 
   // whole-document
   setResume: (resume: ResumeData) => void;
@@ -307,6 +309,15 @@ export const useResumeStore = create<ResumeStore>((set) => {
       mutate((r) => {
         if (color) r.meta.themeColor = color;
         else delete r.meta.themeColor;
+        // Individual accent / default selections are single-tone — drop any
+        // secondary left over from a previously chosen two-tone preset.
+        delete r.meta.secondaryColor;
+      }),
+
+    setThemePreset: (accent, secondary) =>
+      mutate((r) => {
+        r.meta.themeColor = accent;
+        r.meta.secondaryColor = secondary;
       }),
 
     setDensity: (density) =>
@@ -356,6 +367,11 @@ export const useResumeStore = create<ResumeStore>((set) => {
     setHighlights: (highlights) =>
       mutate((r) => {
         r.meta.highlights = highlights;
+      }),
+
+    setUploadedFont: (font) =>
+      mutate((r) => {
+        r.meta.uploadedFont = font;
       }),
 
     toggleSection: (section) =>

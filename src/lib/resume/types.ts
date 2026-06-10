@@ -71,6 +71,7 @@ export interface SkillEntry {
   id: string;
   name: string; // category, e.g. "Languages"
   keywords: string[]; // e.g. ["Python", "JavaScript"]
+  level?: string; // e.g. "Beginner" | "Intermediate" | "Expert" | "Fluent"
 }
 
 export interface CertificateEntry {
@@ -139,8 +140,10 @@ export interface ResumeMeta {
   hiddenSections?: SectionKey[];
   /** Order body sections render in. Absent / partial = default order. */
   sectionOrder?: SectionKey[];
-  /** Accent color id (see theme.ts ACCENTS). Absent = template default. */
+  /** Accent color id (see theme.ts ACCENTS) or raw hex. Absent = template default. */
   themeColor?: string;
+  /** Secondary accent (raw hex), set by two-tone theme presets. Absent = no second tone. */
+  secondaryColor?: string;
   /** Layout density preset. Absent = "standard". Quick-sets the spacing below. */
   density?: "compact" | "standard" | "loose";
   /** Font family id (see theme.ts FONTS). Absent = "helvetica". */
@@ -154,6 +157,8 @@ export interface ResumeMeta {
   dateFormat?: DateFormat;
   /** Ephemeral overlay for recruiter agency branding mode */
   agencyBranding?: AgencyBranding;
+  /** Uploaded custom font stored as data URL for PDF embedding. */
+  uploadedFont?: { family: string; dataUrl: string };
 }
 
 export interface ResumeData {

@@ -38,6 +38,20 @@ const DEFINITIONS: Record<
 
 const registered = new Set<string>();
 
+/**
+ * Call before rendering any PDF that might use an uploaded custom font.
+ * Registers the font with react-pdf from its stored data URL. Idempotent.
+ */
+export function prepareUploadedFont(
+  uploaded: { family: string; dataUrl: string } | undefined | null,
+): void {
+  if (!uploaded) return;
+  const { family, dataUrl } = uploaded;
+  if (registered.has(family)) return;
+  registered.add(family);
+  Font.register({ family, src: dataUrl });
+}
+
 export function ensureFontRegistered(fontId: string | undefined): void {
   if (!fontId) return;
   const def = DEFINITIONS[fontId];

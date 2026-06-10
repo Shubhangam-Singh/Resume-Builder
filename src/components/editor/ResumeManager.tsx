@@ -94,10 +94,12 @@ export function ResumeManager() {
   }
 
   async function duplicate() {
+    const name = window.prompt("Name this copy", `${documentName} (copy)`);
+    if (name === null) return;
     await persistCurrent();
     const doc: SavedDoc = {
       id: uid(),
-      name: `${documentName} (copy)`,
+      name: name.trim() || `${documentName} (copy)`,
       updatedAt: Date.now(),
       data: structuredClone(resume),
     };
@@ -218,7 +220,7 @@ export function ResumeManager() {
           </Button>
           <Button variant="outline" className="flex-1" onClick={duplicate}>
             <Copy />
-            Duplicate current
+            Clone as…
           </Button>
         </div>
       </DialogContent>

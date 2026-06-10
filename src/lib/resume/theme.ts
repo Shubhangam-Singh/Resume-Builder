@@ -22,9 +22,42 @@ export const ACCENTS: AccentOption[] = [
   { id: "coral", label: "Coral", hex: "#e11d48" },
 ];
 
+/** Named two-color theme presets. The `accent` is applied to the PDF; `secondary` is for visual preview only. */
+export interface ThemePreset {
+  id: string;
+  label: string;
+  accent: string;
+  secondary: string;
+}
+
+export const THEME_PRESETS: ThemePreset[] = [
+  { id: "navy-gold",      label: "Navy + Gold",     accent: "#1e3a5f", secondary: "#b8860b" },
+  { id: "charcoal-teal",  label: "Charcoal + Teal", accent: "#1f2937", secondary: "#0e7490" },
+  { id: "forest-amber",   label: "Forest + Amber",  accent: "#14532d", secondary: "#b45309" },
+  { id: "midnight-coral", label: "Midnight + Coral",accent: "#312e81", secondary: "#e11d48" },
+  { id: "slate-sky",      label: "Slate + Sky",     accent: "#334155", secondary: "#0284c7" },
+  { id: "wine-gold",      label: "Wine + Gold",     accent: "#7c2d12", secondary: "#ca8a04" },
+];
+
 export function resolveAccent(id: string | undefined, fallback: string): string {
   if (!id) return fallback;
+  if (id.startsWith("#")) return id; // raw hex (custom color pickers, etc.)
+  const preset = THEME_PRESETS.find((p) => p.id === id);
+  if (preset) return preset.accent;
   return ACCENTS.find((a) => a.id === id)?.hex ?? fallback;
+}
+
+/**
+ * The second tone of a theme preset. Returns undefined when no secondary is set
+ * (single-accent or template-default selections), so templates leave their
+ * existing one-color styling untouched in that case.
+ */
+export function resolveSecondary(id: string | undefined): string | undefined {
+  if (!id) return undefined;
+  if (id.startsWith("#")) return id; // raw hex
+  const preset = THEME_PRESETS.find((p) => p.id === id);
+  if (preset) return preset.secondary;
+  return ACCENTS.find((a) => a.id === id)?.hex;
 }
 
 // ---- Fonts ----------------------------------------------------------------
@@ -56,7 +89,12 @@ export interface ResolvedFont {
 }
 
 export function resolveFont(id: string | undefined): ResolvedFont {
-  return FONTS.find((f) => f.id === id) ?? FONTS[0];
+  if (!id) return FONTS[0];
+  const found = FONTS.find((f) => f.id === id);
+  if (found) return found;
+  // Uploaded fonts store their family name directly as the fontFamily id.
+  // Return a synthetic entry using the family name for both weights.
+  return { regular: id, bold: id };
 }
 
 // ---- Font size tiers (Small / Normal / Large) -----------------------------

@@ -362,6 +362,11 @@ function IssueRow({ issue }: { issue: Issue }) {
   );
 }
 
+function countOccurrences(text: string, term: string): number {
+  const esc = term.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  return (text.match(new RegExp(`(?<![a-z])${esc}(?![a-z])`, "gi")) ?? []).length;
+}
+
 function CoveragePanel({
   coverage,
   resumeText,
@@ -396,11 +401,14 @@ function CoveragePanel({
             Matched ({present.length})
           </p>
           <div className="flex flex-wrap gap-1.5">
-            {present.map((r) => (
-              <Chip key={r.term} tone="good">
-                {r.term}
-              </Chip>
-            ))}
+            {present.map((r) => {
+              const count = countOccurrences(resumeText, r.term);
+              return (
+                <Chip key={r.term} tone="good" count={count}>
+                  {r.term}
+                </Chip>
+              );
+            })}
           </div>
         </div>
       )}
@@ -448,20 +456,34 @@ function CoveragePanel({
 function Chip({
   children,
   tone,
+  count,
 }: {
   children: string;
   tone: "good" | "muted";
+  count?: number;
 }) {
   return (
     <span
       className={cn(
-        "rounded-full px-2 py-0.5 text-xs",
+        "inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs",
         tone === "good"
           ? "bg-emerald-100 text-emerald-800"
           : "border bg-background text-muted-foreground",
       )}
     >
       {children}
+      {count !== undefined && count > 0 && (
+        <span
+          className={cn(
+            "rounded-full px-1 py-0.5 text-[10px] font-semibold tabular-nums",
+            tone === "good"
+              ? "bg-emerald-200 text-emerald-900"
+              : "bg-muted text-muted-foreground",
+          )}
+        >
+          ×{count}
+        </span>
+      )}
     </span>
   );
 }

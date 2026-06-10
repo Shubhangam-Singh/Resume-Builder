@@ -1,7 +1,13 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Eye, FileText, Loader2, ShieldCheck, SquarePen } from "lucide-react";
+import dynamic from "next/dynamic";
+import { Eye, FileText, Highlighter as HighlighterIcon, Loader2, ShieldCheck, SquarePen } from "lucide-react";
+
+const PageCountBadge = dynamic(
+  () => import("@/components/pdf/PageCountBadge").then((m) => m.PageCountBadge),
+  { ssr: false },
+);
 
 import { DownloadButton } from "@/components/pdf/DownloadButton";
 import { DesignMenu } from "@/components/pdf/DesignMenu";
@@ -24,14 +30,20 @@ import { SectionsMenu } from "./SectionsMenu";
 import { UndoRedo } from "./UndoRedo";
 import { AgencyBrandingDialog } from "./AgencyBrandingDialog";
 import { HighlighterDialog } from "./HighlighterDialog";
-import { FloatingHighlighter } from "./FloatingHighlighter";
+
+const HighlightModePreviewDynamic = dynamic(
+  () => import("@/components/pdf/HighlightModePreview").then((m) => m.HighlightModePreview),
+  { ssr: false },
+);
 
 type MobileView = "edit" | "preview";
 
 export function Workspace() {
   const hydrated = useResumePersistence();
   const setResume = useResumeStore((s) => s.setResume);
+  const resume = useResumeStore((s) => s.resume);
   const [mobileView, setMobileView] = useState<MobileView>("edit");
+  const [highlightMode, setHighlightMode] = useState(false);
   const isDesktop = useMediaQuery("(min-width: 1024px)");
   const [wizardOpen, setWizardOpen] = useState(false);
 
@@ -79,7 +91,6 @@ export function Workspace() {
 
   return (
     <div className="flex h-dvh flex-col overflow-hidden">
-      <FloatingHighlighter />
       <header className="flex flex-wrap items-center justify-between gap-x-2 gap-y-1.5 border-b px-3 py-2 sm:px-4 lg:px-6 lg:py-3">
         <div className="flex min-w-0 items-center gap-2.5">
           <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-primary text-primary-foreground lg:h-9 lg:w-9">
@@ -130,7 +141,7 @@ export function Workspace() {
           <Editor />
         </section>
 
-        {/* Live preview — the actual PDF, never an HTML approximation */}
+        {/* Live preview — PDF viewer or Highlight Mode */}
         <section
           aria-label="Live preview"
           className={cn(
@@ -139,17 +150,39 @@ export function Workspace() {
           )}
         >
           <div className="flex items-center justify-between gap-2 border-b bg-background/60 px-3 py-2 sm:px-4">
-            <span className="text-xs font-medium text-muted-foreground">
-              Live preview
-            </span>
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-medium text-muted-foreground">
+                {highlightMode ? "Highlight mode" : "Live preview"}
+              </span>
+              {!highlightMode && <PageCountBadge />}
+            </div>
             <div className="flex items-center gap-1">
+              {/* Highlight mode toggle */}
+              <button
+                type="button"
+                onClick={() => setHighlightMode((v) => !v)}
+                title={highlightMode ? "Exit highlight mode" : "Enter highlight mode — select text to highlight"}
+                className={cn(
+                  "flex items-center gap-1.5 rounded-md border px-2.5 py-1.5 text-xs font-medium transition-colors",
+                  highlightMode
+                    ? "border-amber-400 bg-amber-50 text-amber-700 dark:border-amber-600 dark:bg-amber-950 dark:text-amber-300"
+                    : "border-transparent bg-transparent text-muted-foreground hover:bg-accent hover:text-foreground"
+                )}
+              >
+                <HighlighterIcon className="h-3.5 w-3.5" />
+                Highlight
+              </button>
               <HighlighterDialog />
               <DesignMenu />
               <TemplateSwitcher />
             </div>
           </div>
           <div className="min-h-0 flex-1">
-            {showPreview ? <LivePreview useImages={!isDesktop} /> : null}
+            {highlightMode ? (
+              <HighlightModePreviewDynamic data={resume} />
+            ) : showPreview ? (
+              <LivePreview useImages={!isDesktop} />
+            ) : null}
           </div>
         </section>
       </div>

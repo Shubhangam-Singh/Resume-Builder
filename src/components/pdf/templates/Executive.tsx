@@ -14,9 +14,9 @@ import {
   formatMonthYear as fmtMonth,
 } from "@/lib/resume/format";
 import { customIdFromKey, resolveSectionOrder } from "@/lib/resume/sections";
-import { makeScale, resolveAccent, resolveFont, type ResolvedFont, type Scale } from "@/lib/resume/theme";
+import { makeScale, resolveAccent, resolveSecondary, resolveFont, type ResolvedFont, type Scale } from "@/lib/resume/theme";
 import { ensureFontRegistered } from "@/lib/resume/fonts";
-import type { ResumeData, SectionKey } from "@/lib/resume/types";
+import type { HighlightRule, ResumeData, SectionKey } from "@/lib/resume/types";
 import { CustomSectionView } from "./CustomSection";
 import { agencyContactLine, contactItems, degreeLine, sectionPresence } from "./shared";
 
@@ -130,6 +130,7 @@ export function Executive({ data }: { data: ResumeData }) {
   const agencyContact = agencyContactLine(agencyBranding);
   const items = contactItems(basics, agencyBranding);
   const accent = resolveAccent(data.meta.themeColor, DEFAULT_ACCENT);
+  const secondary = resolveSecondary(data.meta.secondaryColor);
   const font = resolveFont(data.meta.fontFamily);
   const sc = makeScale(data.meta);
   const styles = makeStyles(accent, sc, font);
@@ -247,7 +248,7 @@ export function Executive({ data }: { data: ResumeData }) {
                 {s.name ? (
                   <Text style={styles.skillCategory}>{`${s.name}: `}</Text>
                 ) : null}
-                <Text style={styles.skillKeywords}>{s.keywords.join(", ")}</Text>
+                <Text style={styles.skillKeywords}>{s.keywords.join(", ")}{s.level ? ` · ${s.level}` : ""}</Text>
               </View>
             ))}
           </View>
@@ -301,7 +302,7 @@ export function Executive({ data }: { data: ResumeData }) {
           <View style={styles.headerLeft}>
             <Text style={styles.name}>{basics.name || "Your Name"}</Text>
             {basics.label ? (
-              <Text style={styles.label}>{basics.label}</Text>
+              <Text style={secondary ? [styles.label, { color: secondary }] : styles.label}>{basics.label}</Text>
             ) : null}
           </View>
           {items.length > 0 || agencyContact || agencyBranding?.logoBase64 ? (

@@ -57,6 +57,7 @@ export function CustomSectionView({
   sc,
   font,
   dateFormat,
+  highlights,
 }: {
   section: CustomSection;
   accent: string;

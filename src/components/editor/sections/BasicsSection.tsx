@@ -1,17 +1,22 @@
 "use client";
 
+import { useId } from "react";
+
+import { AiSummaryButton } from "@/components/ai/AiSummaryButton";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { useResumeStore } from "@/lib/store";
 import { PhotoField } from "../PhotoField";
 import {
   AddButton,
   EntryCard,
   FieldRow,
-  TextAreaField,
   TextField,
   WritingHintBar,
 } from "../fields";
 
 export function BasicsSection() {
+  const summaryId = useId();
   const { basics } = useResumeStore((s) => s.resume);
   const updateBasics = useResumeStore((s) => s.updateBasics);
   const updateLocation = useResumeStore((s) => s.updateLocation);
@@ -86,13 +91,19 @@ export function BasicsSection() {
         hint="Shown only if no region is set."
       />
 
-      <TextAreaField
-        label="Professional summary"
-        value={basics.summary}
-        onChange={(v) => updateBasics({ summary: v })}
-        placeholder="A 2–3 sentence overview of who you are and what you do."
-        rows={4}
-      />
+      <div className="space-y-1.5">
+        <div className="flex items-center justify-between">
+          <Label htmlFor={summaryId}>Professional summary</Label>
+          <AiSummaryButton />
+        </div>
+        <Textarea
+          id={summaryId}
+          rows={4}
+          value={basics.summary}
+          onChange={(e) => updateBasics({ summary: e.target.value })}
+          placeholder="A 2–3 sentence overview of who you are and what you do."
+        />
+      </div>
       <WritingHintBar text={basics.summary} />
 
       <div className="space-y-3">

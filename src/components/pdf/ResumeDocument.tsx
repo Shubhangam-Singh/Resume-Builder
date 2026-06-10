@@ -1,6 +1,7 @@
 import { createElement, type ReactElement } from "react";
 import type { DocumentProps } from "@react-pdf/renderer";
 
+import { prepareUploadedFont } from "@/lib/resume/fonts";
 import type { ResumeData } from "@/lib/resume/types";
 import { getTemplateComponent } from "./templates/registry";
 
@@ -10,6 +11,7 @@ import { getTemplateComponent } from "./templates/registry";
  * the live preview and the file download, guaranteeing they never diverge.
  */
 export function ResumeDocument({ data }: { data: ResumeData }) {
+  prepareUploadedFont(data.meta.uploadedFont);
   const Template = getTemplateComponent(data.meta.template);
   return <Template data={data} />;
 }

@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 
+import { usePdfStore } from "@/lib/pdf-store";
 import type { ResumeData } from "@/lib/resume/types";
 
 /**
@@ -11,6 +12,7 @@ import type { ResumeData } from "@/lib/resume/types";
  * browser. The exported file is still the same React-PDF document.
  */
 export default function PdfImagePreview({ data }: { data: ResumeData }) {
+  const setPageCount = usePdfStore((s) => s.setPageCount);
   const [pages, setPages] = useState<string[]>([]);
   const [status, setStatus] = useState<"rendering" | "ready" | "error">(
     "rendering",
@@ -34,6 +36,7 @@ export default function PdfImagePreview({ data }: { data: ResumeData }) {
         const bytes = new Uint8Array(await blob.arrayBuffer());
         const loadingTask = pdfjs.getDocument({ data: bytes });
         const doc = await loadingTask.promise;
+        if (id === reqId.current) setPageCount(doc.numPages);
 
         const rendered: string[] = [];
         try {
