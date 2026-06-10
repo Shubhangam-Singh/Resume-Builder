@@ -215,10 +215,10 @@ export function Metro({ data }: { data: ResumeData }) {
       contactNodes.push(
         p.url ? (
           <Link style={styles.link} src={p.url}>
-            {`\${p.username || p.url.replace(/^https?:\/\//, "")}`}
+            {`${p.username || p.url.replace(/^https?:\/\//, "")}`}
           </Link>
         ) : (
-          <Text>{`\${p.username}`}</Text>
+          <Text>{`${p.username}`}</Text>
         ),
       );
     });
