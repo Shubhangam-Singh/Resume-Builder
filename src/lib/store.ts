@@ -22,6 +22,7 @@ import type {
   CustomSection,
   DateFormat,
   EducationEntry,
+  HighlightRule,
   Location,
   Profile,
   ProjectEntry,
@@ -111,6 +112,7 @@ interface ResumeStore {
   setSectionSpacing: (value: number) => void;
   setParagraphSpacing: (value: number) => void;
   setDateFormat: (value: DateFormat) => void;
+  setHighlights: (highlights: HighlightRule[]) => void;
 
   // whole-document
   setResume: (resume: ResumeData) => void;
@@ -349,6 +351,11 @@ export const useResumeStore = create<ResumeStore>((set) => {
     setDateFormat: (value) =>
       mutate((r) => {
         r.meta.dateFormat = value;
+      }),
+
+    setHighlights: (highlights) =>
+      mutate((r) => {
+        r.meta.highlights = highlights;
       }),
 
     toggleSection: (section) =>

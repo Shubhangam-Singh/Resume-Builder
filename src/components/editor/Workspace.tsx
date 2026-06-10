@@ -23,6 +23,8 @@ import { ResumeManager } from "./ResumeManager";
 import { SectionsMenu } from "./SectionsMenu";
 import { UndoRedo } from "./UndoRedo";
 import { AgencyBrandingDialog } from "./AgencyBrandingDialog";
+import { HighlighterDialog } from "./HighlighterDialog";
+import { FloatingHighlighter } from "./FloatingHighlighter";
 
 type MobileView = "edit" | "preview";
 
@@ -77,6 +79,7 @@ export function Workspace() {
 
   return (
     <div className="flex h-dvh flex-col overflow-hidden">
+      <FloatingHighlighter />
       <header className="flex flex-wrap items-center justify-between gap-x-2 gap-y-1.5 border-b px-3 py-2 sm:px-4 lg:px-6 lg:py-3">
         <div className="flex min-w-0 items-center gap-2.5">
           <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-primary text-primary-foreground lg:h-9 lg:w-9">
@@ -140,6 +143,7 @@ export function Workspace() {
               Live preview
             </span>
             <div className="flex items-center gap-1">
+              <HighlighterDialog />
               <DesignMenu />
               <TemplateSwitcher />
             </div>

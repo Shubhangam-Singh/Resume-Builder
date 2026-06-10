@@ -124,9 +124,17 @@ export interface AgencyBranding {
   hrEmail?: string;
 }
 
+export interface HighlightRule {
+  id: string;
+  text: string;
+  color: string;
+}
+
 export interface ResumeMeta {
   template: string;
   lastModified: string;
+  /** Custom highlight rules for the PDF. */
+  highlights?: HighlightRule[];
   /** Sections hidden from the rendered PDF. Absent = nothing hidden. */
   hiddenSections?: SectionKey[];
   /** Order body sections render in. Absent / partial = default order. */

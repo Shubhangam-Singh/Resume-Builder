@@ -2,7 +2,8 @@ import { Link, StyleSheet, Text, View } from "@react-pdf/renderer";
 
 import { formatMonthYear } from "@/lib/resume/format";
 import type { ResolvedFont, Scale } from "@/lib/resume/theme";
-import type { CustomSection, DateFormat } from "@/lib/resume/types";
+import type { CustomSection, DateFormat, HighlightRule } from "@/lib/resume/types";
+import { HighlightText } from "../HighlightText";
 
 /**
  * A self-contained renderer for user-defined custom sections. It builds its own
@@ -62,6 +63,7 @@ export function CustomSectionView({
   sc: Scale;
   font: ResolvedFont;
   dateFormat?: DateFormat;
+  highlights?: HighlightRule[];
 }) {
   const items = section.items.filter(
     (it) => it.name || it.description || it.highlights.length || it.date,
@@ -92,12 +94,12 @@ export function CustomSectionView({
               </View>
             ) : null}
             {it.description ? (
-              <Text style={styles.description}>{it.description}</Text>
+              <HighlightText text={it.description} highlights={highlights} style={styles.description} />
             ) : null}
             {it.highlights.map((h, i) => (
               <View key={i} style={styles.bulletRow}>
                 <Text style={styles.bulletGlyph}>•</Text>
-                <Text style={styles.bulletText}>{h}</Text>
+                <HighlightText text={h} highlights={highlights} style={styles.bulletText} />
               </View>
             ))}
           </View>

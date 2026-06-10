@@ -7,6 +7,7 @@ import {
   Text,
   View,
 } from "@react-pdf/renderer";
+import { HighlightText } from "../HighlightText";
 
 import {
   formatDateRange as fmtRange,
@@ -112,11 +113,11 @@ function SectionTitle({ styles, children }: { styles: Styles; children: string }
   );
 }
 
-function Bullet({ styles, children }: { styles: Styles; children: string }) {
+function Bullet({ styles, highlights, children }: { styles: Styles; highlights?: HighlightRule[]; children: string }) {
   return (
     <View style={styles.bulletRow}>
       <Text style={styles.bulletGlyph}>•</Text>
-      <Text style={styles.bulletText}>{children}</Text>
+      <HighlightText text={children} highlights={highlights} style={styles.bulletText} />
     </View>
   );
 }
@@ -142,7 +143,7 @@ export function Executive({ data }: { data: ResumeData }) {
         return has.summary ? (
           <View key="summary" style={styles.section}>
             <SectionTitle styles={styles}>Summary</SectionTitle>
-            <Text style={styles.summary}>{basics.summary}</Text>
+            <HighlightText text={basics.summary} highlights={data.meta.highlights} style={styles.summary} />
           </View>
         ) : null;
       case "work":
@@ -167,10 +168,10 @@ export function Executive({ data }: { data: ResumeData }) {
                   ) : null}
                 </View>
                 {w.summary ? (
-                  <Text style={styles.entrySummary}>{w.summary}</Text>
+                  <HighlightText text={w.summary} highlights={data.meta.highlights} style={styles.entrySummary} />
                 ) : null}
                 {w.highlights.map((h, i) => (
-                  <Bullet key={i} styles={styles}>
+                  <Bullet key={i} styles={styles} highlights={data.meta.highlights}>
                     {h}
                   </Bullet>
                 ))}
@@ -226,10 +227,10 @@ export function Executive({ data }: { data: ResumeData }) {
                   ) : null}
                 </View>
                 {p.description ? (
-                  <Text style={styles.entrySummary}>{p.description}</Text>
+                  <HighlightText text={p.description} highlights={data.meta.highlights} style={styles.entrySummary} />
                 ) : null}
                 {p.highlights.map((h, i) => (
-                  <Bullet key={i} styles={styles}>
+                  <Bullet key={i} styles={styles} highlights={data.meta.highlights}>
                     {h}
                   </Bullet>
                 ))}
@@ -277,7 +278,7 @@ export function Executive({ data }: { data: ResumeData }) {
           ? (data.customSections ?? []).find((s) => s.id === id)
           : null;
         return cs ? (
-          <CustomSectionView
+          <CustomSectionView highlights={data.meta.highlights}
             key={key}
             section={cs}
             accent={accent}
