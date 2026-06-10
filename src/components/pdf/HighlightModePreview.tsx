@@ -318,7 +318,7 @@ export function HighlightModePreview({ data }: { data: ResumeData }) {
       <iframe
         ref={iframeRef}
         title="Highlight mode preview"
-        sandbox="allow-same-origin"
+        sandbox="allow-same-origin allow-scripts"
         className="h-full w-full border-none"
         style={{ background: "white" }}
       />

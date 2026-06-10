@@ -210,15 +210,17 @@ export function Metro({ data }: { data: ResumeData }) {
         </Link>,
       );
     basics.profiles.forEach((p) => {
-      const text = p.url || p.username || p.network;
-      if (!text) return;
+      const displayText = p.url
+        ? (p.username || p.url.replace(/^https?:\/\//, ""))
+        : (p.username || p.network);
+      if (!displayText) return;
       contactNodes.push(
         p.url ? (
           <Link style={styles.link} src={p.url}>
-            {`${p.username || p.url.replace(/^https?:\/\//, "")}`}
+            {displayText}
           </Link>
         ) : (
-          <Text>{`${p.username}`}</Text>
+          <Text>{displayText}</Text>
         ),
       );
     });
