@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import dynamic from "next/dynamic";
-import { Eye, FileText, Highlighter as HighlighterIcon, Loader2, ShieldCheck, SquarePen } from "lucide-react";
+import { Eye, FileText, Highlighter as HighlighterIcon, Loader2, Search, ShieldCheck, SquarePen } from "lucide-react";
 
 const PageCountBadge = dynamic(
   () => import("@/components/pdf/PageCountBadge").then((m) => m.PageCountBadge),
@@ -15,13 +15,16 @@ import { LivePreview } from "@/components/pdf/LivePreview";
 import { TemplateSwitcher } from "@/components/pdf/TemplateSwitcher";
 import { ImportResume } from "@/components/import/ImportResume";
 import { AtsChecker } from "@/components/ats/AtsChecker";
+import { CommandPalette } from "@/components/CommandPalette";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { cn } from "@/lib/utils";
 import { useMediaQuery } from "@/lib/use-media-query";
 import { useResumePersistence } from "@/lib/persist/useResumePersistence";
+import { prewarmPdfRenderer } from "@/lib/pdf/render";
 import { Wizard, wizardIsDone, markWizardDone } from "@/components/onboarding/Wizard";
 import { clearShareParam, decodeResumeFromUrl } from "@/lib/share/url";
 import { useResumeStore } from "@/lib/store";
+import { useUiStore } from "@/lib/ui-store";
 import { CompletenessBadge } from "./CompletenessBadge";
 import { Editor } from "./Editor";
 import { MoreMenu } from "./MoreMenu";
@@ -46,6 +49,12 @@ export function Workspace() {
   const [highlightMode, setHighlightMode] = useState(false);
   const isDesktop = useMediaQuery("(min-width: 1024px)");
   const [wizardOpen, setWizardOpen] = useState(false);
+  const openDialog = useUiStore((s) => s.openDialog);
+
+  // Boot the PDF worker during idle time so the first preview is instant.
+  useEffect(() => {
+    prewarmPdfRenderer();
+  }, []);
 
   // After hydration: (1) load any ?r= shared resume, (2) auto-show wizard for new users.
   useEffect(() => {
@@ -91,7 +100,7 @@ export function Workspace() {
 
   return (
     <div className="flex h-dvh flex-col overflow-hidden">
-      <header className="flex flex-wrap items-center justify-between gap-x-2 gap-y-1.5 border-b px-3 py-2 sm:px-4 lg:px-6 lg:py-3">
+      <header className="flex flex-wrap items-center justify-between gap-x-2 gap-y-1.5 border-b px-3 py-2 sm:px-4 lg:flex-nowrap lg:px-6 lg:py-3">
         <div className="flex min-w-0 items-center gap-2.5">
           <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-primary text-primary-foreground lg:h-9 lg:w-9">
             <FileText className="h-5 w-5" />
@@ -111,13 +120,25 @@ export function Workspace() {
 
         <nav
           aria-label="Resume actions"
-          className="flex flex-wrap items-center justify-end gap-1.5"
+          className="flex flex-wrap items-center justify-end gap-1.5 lg:flex-nowrap"
         >
-          <span className="hidden items-center gap-1.5 rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-xs font-medium text-emerald-700 dark:border-emerald-900 dark:bg-emerald-950 dark:text-emerald-300 xl:inline-flex">
+          <span className="hidden items-center gap-1.5 rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-xs font-medium text-emerald-700 dark:border-emerald-900 dark:bg-emerald-950 dark:text-emerald-300 min-[1700px]:inline-flex">
             <ShieldCheck className="h-3.5 w-3.5" />
             Runs entirely in your browser
           </span>
           <CompletenessBadge />
+          <button
+            type="button"
+            onClick={() => openDialog("palette")}
+            title="Command palette (Ctrl+K)"
+            aria-label="Open command palette"
+            className="hidden items-center gap-1.5 rounded-md border px-2 py-1.5 text-xs text-muted-foreground transition-colors hover:bg-accent hover:text-foreground md:flex"
+          >
+            <Search className="h-3.5 w-3.5" />
+            <kbd className="hidden rounded border bg-muted px-1 text-[10px] xl:inline">
+              Ctrl K
+            </kbd>
+          </button>
           <UndoRedo />
           <ResumeManager />
           <ThemeToggle />
@@ -208,6 +229,9 @@ export function Workspace() {
 
       {/* Guided wizard — auto-shown for first-time visitors */}
       <Wizard open={wizardOpen} onOpenChange={handleWizardClose} />
+
+      {/* Ctrl+K command palette */}
+      <CommandPalette />
     </div>
   );
 }

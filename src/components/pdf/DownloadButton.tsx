@@ -7,14 +7,6 @@ import { Button } from "@/components/ui/button";
 import { useResumeStore } from "@/lib/store";
 import { useAgencyStore } from "@/lib/agency-store";
 
-function makeFileName(name: string): string {
-  const base = (name || "resume")
-    .trim()
-    .replace(/[^\w-]+/g, "_")
-    .replace(/^_+|_+$/g, "");
-  return `${base || "resume"}_Resume.pdf`;
-}
-
 export function DownloadButton() {
   const resume = useResumeStore((s) => s.resume);
   const agencyBranding = useAgencyStore((s) => s.branding);
@@ -24,24 +16,11 @@ export function DownloadButton() {
     setBusy(true);
     try {
       // Lazy-load the renderer only when the user actually downloads.
-      const [{ pdf }, { buildResumeDocument }] = await Promise.all([
-        import("@react-pdf/renderer"),
-        import("./ResumeDocument"),
-      ]);
-      const mergedResume = {
+      const { downloadResumePdf } = await import("@/lib/export/pdf");
+      await downloadResumePdf({
         ...resume,
         meta: { ...resume.meta, agencyBranding },
-      };
-      const blob = await pdf(buildResumeDocument(mergedResume)).toBlob();
-
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement("a");
-      link.href = url;
-      link.download = makeFileName(resume.basics.name);
-      document.body.appendChild(link);
-      link.click();
-      link.remove();
-      URL.revokeObjectURL(url);
+      });
     } catch (err) {
       console.error("Failed to generate PDF", err);
       // Best-effort: surface a minimal message without a heavy toast system.

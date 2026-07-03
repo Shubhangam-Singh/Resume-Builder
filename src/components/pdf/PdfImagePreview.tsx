@@ -25,14 +25,19 @@ export default function PdfImagePreview({ data }: { data: ResumeData }) {
 
     (async () => {
       try {
-        const [{ pdf }, { buildResumeDocument }, pdfjs] = await Promise.all([
-          import("@react-pdf/renderer"),
-          import("./ResumeDocument"),
+        const [{ renderResumePdf, RenderSuperseded }, pdfjs] = await Promise.all([
+          import("@/lib/pdf/render"),
           import("pdfjs-dist"),
         ]);
         pdfjs.GlobalWorkerOptions.workerSrc = "/pdf.worker.min.mjs";
 
-        const blob = await pdf(buildResumeDocument(data)).toBlob();
+        const blob = await renderResumePdf(data, { lane: "image-preview" }).catch(
+          (err: unknown) => {
+            if (err instanceof RenderSuperseded) return null;
+            throw err;
+          },
+        );
+        if (!blob) return; // a newer edit took over this lane
         const bytes = new Uint8Array(await blob.arrayBuffer());
         const loadingTask = pdfjs.getDocument({ data: bytes });
         const doc = await loadingTask.promise;
@@ -66,7 +71,7 @@ export default function PdfImagePreview({ data }: { data: ResumeData }) {
         if (id === reqId.current) setStatus("error");
       }
     })();
-  }, [data]);
+  }, [data, setPageCount]);
 
   return (
     <div className="relative h-full w-full overflow-y-auto bg-muted p-3">

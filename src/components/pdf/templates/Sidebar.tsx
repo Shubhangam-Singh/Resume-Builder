@@ -359,7 +359,7 @@ export function Sidebar({ data }: { data: ResumeData }) {
       title={basics.name ? `${basics.name} — Resume` : "Resume"}
       author={basics.name || undefined}
     >
-      <Page size="LETTER" style={styles.page}>
+      <Page size={data.meta.pageSize ?? "LETTER"} style={styles.page}>
         <View style={styles.sidebarBg} fixed />
 
         <View style={styles.row}>

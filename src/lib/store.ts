@@ -106,6 +106,10 @@ interface ResumeStore {
   moveSection: (section: SectionKey, dir: -1 | 1) => void;
   setThemeColor: (color: string | undefined) => void;
   setThemePreset: (accent: string, secondary: string) => void;
+  setPageSize: (size: "LETTER" | "A4") => void;
+  setCoverLetter: (letter: { jobDescription: string; text: string } | undefined) => void;
+  /** Add a keyword to skills (dedup, case-insensitive). Used by the tailor flow. */
+  addSkillKeyword: (keyword: string) => void;
   setDensity: (density: "compact" | "standard" | "loose") => void;
   setFontFamily: (fontFamily: string) => void;
   setFontScale: (value: number) => void;
@@ -318,6 +322,35 @@ export const useResumeStore = create<ResumeStore>((set) => {
       mutate((r) => {
         r.meta.themeColor = accent;
         r.meta.secondaryColor = secondary;
+      }),
+
+    setPageSize: (size) =>
+      mutate((r) => {
+        r.meta.pageSize = size;
+      }),
+
+    setCoverLetter: (letter) =>
+      mutate((r) => {
+        if (letter) r.coverLetter = letter;
+        else delete r.coverLetter;
+      }),
+
+    addSkillKeyword: (keyword) =>
+      mutate((r) => {
+        const kw = keyword.trim();
+        if (!kw) return;
+        const exists = r.skills.some((s) =>
+          s.keywords.some((k) => k.toLowerCase() === kw.toLowerCase()),
+        );
+        if (exists) return;
+        let target = r.skills.find((s) =>
+          /^(additional|other|keyword)/i.test(s.name.trim()),
+        );
+        if (!target) {
+          target = { ...emptySkill(), name: "Additional Skills" };
+          r.skills.push(target);
+        }
+        target.keywords.push(kw);
       }),
 
     setDensity: (density) =>

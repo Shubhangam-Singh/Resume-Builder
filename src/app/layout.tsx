@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import localFont from "next/font/local";
 import "./globals.css";
 import { Analytics } from "@vercel/analytics/next";
+import { ServiceWorkerRegistrar } from "@/components/pwa/ServiceWorkerRegistrar";
 
 
 const geistSans = localFont({
@@ -238,6 +239,7 @@ export default function RootLayout({
       >
         {children}
         <Analytics />
+        <ServiceWorkerRegistrar />
       </body>
     </html>
   );

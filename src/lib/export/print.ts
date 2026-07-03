@@ -6,11 +6,8 @@ import type { ResumeData } from "@/lib/resume/types";
  * downloaded file rather than an HTML approximation. Everything stays local.
  */
 export async function printResume(resume: ResumeData): Promise<void> {
-  const [{ pdf }, { buildResumeDocument }] = await Promise.all([
-    import("@react-pdf/renderer"),
-    import("@/components/pdf/ResumeDocument"),
-  ]);
-  const blob = await pdf(buildResumeDocument(resume)).toBlob();
+  const { renderResumePdf } = await import("@/lib/pdf/render");
+  const blob = await renderResumePdf(resume);
   const url = URL.createObjectURL(blob);
 
   const iframe = document.createElement("iframe");

@@ -40,6 +40,7 @@ import { checkWriting, type WritingIssue } from "@/lib/writing/check";
 import { parseResumeText } from "@/lib/parser";
 import { cn } from "@/lib/utils";
 import { useResumeStore } from "@/lib/store";
+import { useUiStore } from "@/lib/ui-store";
 
 type SelfStatus = "idle" | "running" | "done" | "error";
 
@@ -59,6 +60,16 @@ export function AtsChecker() {
   const [status, setStatus] = useState<SelfStatus>("idle");
   const [report, setReport] = useState<SelfReport | null>(null);
 
+  // Open on request from the command palette.
+  const dialogRequest = useUiStore((s) => s.dialog);
+  const closeDialogRequest = useUiStore((s) => s.closeDialog);
+  useEffect(() => {
+    if (dialogRequest === "ats-check") {
+      setOpen(true);
+      closeDialogRequest();
+    }
+  }, [dialogRequest, closeDialogRequest]);
+
   const [jd, setJd] = useState("");
   const [coverage, setCoverage] = useState<CoverageResult | null>(null);
 
@@ -67,13 +78,12 @@ export function AtsChecker() {
     setReport(null);
     try {
       // Dogfood: render the real PDF, read its text back, and re-parse it.
-      const [{ pdf }, { buildResumeDocument }, { extractPdfTextFromData }] =
+      const [{ renderResumePdf }, { extractPdfTextFromData }] =
         await Promise.all([
-          import("@react-pdf/renderer"),
-          import("@/components/pdf/ResumeDocument"),
+          import("@/lib/pdf/render"),
           import("@/lib/import/pdf"),
         ]);
-      const blob = await pdf(buildResumeDocument(resume)).toBlob();
+      const blob = await renderResumePdf(resume);
       const text = await extractPdfTextFromData(
         new Uint8Array(await blob.arrayBuffer()),
       );
@@ -121,9 +131,9 @@ export function AtsChecker() {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button variant="outline" size="sm" aria-label="ATS check">
+        <Button variant="outline" size="sm" aria-label="ATS check" title="ATS check">
           <Gauge />
-          <span className="hidden sm:inline">ATS check</span>
+          <span className="hidden sm:inline lg:hidden 2xl:inline">ATS check</span>
         </Button>
       </DialogTrigger>
 

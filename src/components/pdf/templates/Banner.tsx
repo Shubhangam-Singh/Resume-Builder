@@ -341,7 +341,7 @@ export function Banner({ data }: { data: ResumeData }) {
       title={basics.name ? `${basics.name} — Resume` : "Resume"}
       author={basics.name || undefined}
     >
-      <Page size="LETTER" style={styles.page}>
+      <Page size={data.meta.pageSize ?? "LETTER"} style={styles.page}>
         <View style={styles.banner}>
           {basics.image ? (
             <Image style={styles.photo} src={basics.image} />

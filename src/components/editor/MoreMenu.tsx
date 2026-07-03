@@ -1,8 +1,9 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   Briefcase,
+  Crosshair,
   Download,
   FileText,
   FileType,
@@ -20,8 +21,10 @@ import {
 
 import { AiSettings } from "@/components/ai/AiSettings";
 import { ApplyTracker } from "@/components/editor/ApplyTracker";
+import { CoverLetterDialog } from "@/components/editor/CoverLetterDialog";
 import { RoleSamples } from "@/components/editor/RoleSamples";
 import { ShareDialog } from "@/components/editor/ShareDialog";
+import { TailorDialog } from "@/components/editor/TailorDialog";
 import { VersionHistory } from "@/components/editor/VersionHistory";
 import { LinkedInImport } from "@/components/import/LinkedInImport";
 import { Wizard } from "@/components/onboarding/Wizard";
@@ -37,6 +40,7 @@ import {
 import { downloadResumeText } from "@/lib/export/text";
 import { downloadResumeJson, parseResumeJson } from "@/lib/persist/json";
 import { useResumeStore } from "@/lib/store";
+import { useUiStore } from "@/lib/ui-store";
 
 export function MoreMenu() {
   const resume = useResumeStore((s) => s.resume);
@@ -51,6 +55,32 @@ export function MoreMenu() {
   const [shareOpen, setShareOpen] = useState(false);
   const [roleSamplesOpen, setRoleSamplesOpen] = useState(false);
   const [wizardOpen, setWizardOpen] = useState(false);
+  const [coverLetterOpen, setCoverLetterOpen] = useState(false);
+  const [tailorOpen, setTailorOpen] = useState(false);
+
+  // The command palette requests dialogs through the UI store; consume the
+  // request here since this component owns the dialog instances.
+  const dialogRequest = useUiStore((s) => s.dialog);
+  const closeDialogRequest = useUiStore((s) => s.closeDialog);
+  useEffect(() => {
+    if (!dialogRequest) return;
+    const openers: Partial<Record<string, () => void>> = {
+      share: () => setShareOpen(true),
+      "version-history": () => setVersionOpen(true),
+      "apply-tracker": () => setTrackerOpen(true),
+      "ai-settings": () => setAiOpen(true),
+      "cover-letter": () => setCoverLetterOpen(true),
+      "linkedin-import": () => setLinkedinOpen(true),
+      "role-samples": () => setRoleSamplesOpen(true),
+      wizard: () => setWizardOpen(true),
+      tailor: () => setTailorOpen(true),
+    };
+    const opener = openers[dialogRequest];
+    if (opener) {
+      opener();
+      closeDialogRequest();
+    }
+  }, [dialogRequest, closeDialogRequest]);
 
   async function handleJsonFile(file: File | undefined) {
     if (!file) return;
@@ -144,6 +174,14 @@ export function MoreMenu() {
             <Wand2 />
             AI bullet helper…
           </DropdownMenuItem>
+          <DropdownMenuItem onSelect={() => setTailorOpen(true)}>
+            <Crosshair />
+            Tailor for a job…
+          </DropdownMenuItem>
+          <DropdownMenuItem onSelect={() => setCoverLetterOpen(true)}>
+            <FileText />
+            Cover letter…
+          </DropdownMenuItem>
 
           <DropdownMenuSeparator />
           <DropdownMenuLabel>Start fresh</DropdownMenuLabel>
@@ -187,6 +225,8 @@ export function MoreMenu() {
       <ShareDialog open={shareOpen} onOpenChange={setShareOpen} />
       <RoleSamples open={roleSamplesOpen} onOpenChange={setRoleSamplesOpen} />
       <Wizard open={wizardOpen} onOpenChange={setWizardOpen} />
+      <CoverLetterDialog open={coverLetterOpen} onOpenChange={setCoverLetterOpen} />
+      <TailorDialog open={tailorOpen} onOpenChange={setTailorOpen} />
 
       <input
         ref={inputRef}

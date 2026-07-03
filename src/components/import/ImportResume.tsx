@@ -120,9 +120,9 @@ export function ImportResume() {
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>
-        <Button variant="outline" size="sm" aria-label="Import resume">
+        <Button variant="outline" size="sm" aria-label="Import resume" title="Import resume">
           <Upload />
-          <span className="hidden sm:inline">Import</span>
+          <span className="hidden sm:inline lg:hidden 2xl:inline">Import</span>
         </Button>
       </DialogTrigger>
 

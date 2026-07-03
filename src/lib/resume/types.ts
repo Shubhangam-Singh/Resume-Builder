@@ -140,6 +140,8 @@ export interface ResumeMeta {
   hiddenSections?: SectionKey[];
   /** Order body sections render in. Absent / partial = default order. */
   sectionOrder?: SectionKey[];
+  /** Paper size for the PDF. Absent = "LETTER". */
+  pageSize?: "LETTER" | "A4";
   /** Accent color id (see theme.ts ACCENTS) or raw hex. Absent = template default. */
   themeColor?: string;
   /** Secondary accent (raw hex), set by two-tone theme presets. Absent = no second tone. */
@@ -170,6 +172,8 @@ export interface ResumeData {
   certificates: CertificateEntry[];
   /** User-defined sections. Absent on documents created before this feature. */
   customSections?: CustomSection[];
+  /** Cover letter drafted for this resume (AI-assisted or hand-written). */
+  coverLetter?: { jobDescription: string; text: string };
   meta: ResumeMeta;
 }
 

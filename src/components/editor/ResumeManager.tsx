@@ -144,9 +144,9 @@ export function ResumeManager() {
   return (
     <Dialog open={open} onOpenChange={handleOpen}>
       <DialogTrigger asChild>
-        <Button variant="ghost" size="sm" aria-label="Manage resumes">
+        <Button variant="ghost" size="sm" aria-label="Manage resumes" title={`Manage resumes — ${documentName}`}>
           <Files />
-          <span className="hidden max-w-[12ch] truncate sm:inline">
+          <span className="hidden max-w-[12ch] truncate sm:inline lg:hidden 2xl:inline">
             {documentName}
           </span>
         </Button>

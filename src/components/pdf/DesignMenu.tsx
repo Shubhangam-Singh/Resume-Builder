@@ -40,6 +40,7 @@ export function DesignMenu() {
   const fontFamily = useResumeStore((s) => s.resume.meta.fontFamily) ?? "helvetica";
   const uploadedFont = useResumeStore((s) => s.resume.meta.uploadedFont);
   const dateFormat = useResumeStore((s) => s.resume.meta.dateFormat) ?? "short";
+  const pageSize = useResumeStore((s) => s.resume.meta.pageSize) ?? "LETTER";
   const fontScaleRaw = useResumeStore((s) => s.resume.meta.fontScale);
   const sectionRaw = useResumeStore((s) => s.resume.meta.sectionSpacing);
   const paragraphRaw = useResumeStore((s) => s.resume.meta.paragraphSpacing);
@@ -55,6 +56,7 @@ export function DesignMenu() {
   const setParagraphSpacing = useResumeStore((s) => s.setParagraphSpacing);
   const setLineSpacing = useResumeStore((s) => s.setLineSpacing);
   const setUploadedFont = useResumeStore((s) => s.setUploadedFont);
+  const setPageSize = useResumeStore((s) => s.setPageSize);
 
   const fontInputRef = useRef<HTMLInputElement>(null);
 
@@ -233,6 +235,32 @@ export function DesignMenu() {
             <Upload className="h-3 w-3" />
             Upload .ttf font…
           </button>
+        </div>
+
+        <DropdownMenuSeparator />
+
+        {/* Paper size */}
+        <DropdownMenuLabel>Paper size</DropdownMenuLabel>
+        <div className="flex gap-1.5 px-2 pb-2 pt-1">
+          {(
+            [
+              { id: "LETTER", label: "US Letter", hint: "8.5 × 11 in" },
+              { id: "A4", label: "A4", hint: "210 × 297 mm" },
+            ] as const
+          ).map((p) => (
+            <button
+              key={p.id}
+              type="button"
+              onClick={() => setPageSize(p.id)}
+              className={cn(
+                "flex flex-1 flex-col items-center gap-0.5 rounded-md border py-1.5 transition-colors",
+                pageSize === p.id ? "border-primary bg-accent font-medium" : "hover:bg-accent/50",
+              )}
+            >
+              <span className="text-xs">{p.label}</span>
+              <span className="text-[10px] text-muted-foreground">{p.hint}</span>
+            </button>
+          ))}
         </div>
 
         <DropdownMenuSeparator />

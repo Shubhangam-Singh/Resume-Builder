@@ -297,7 +297,7 @@ export function Executive({ data }: { data: ResumeData }) {
       title={basics.name ? `${basics.name} — Résumé` : "Résumé"}
       author={basics.name || undefined}
     >
-      <Page size="LETTER" style={styles.page}>
+      <Page size={data.meta.pageSize ?? "LETTER"} style={styles.page}>
         <View style={styles.headerRow}>
           <View style={styles.headerLeft}>
             <Text style={styles.name}>{basics.name || "Your Name"}</Text>

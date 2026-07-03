@@ -48,9 +48,9 @@ export function SectionsMenu() {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button variant="ghost" size="sm" aria-label="Reorder or hide sections">
+        <Button variant="ghost" size="sm" aria-label="Reorder or hide sections" title="Reorder or hide sections">
           <SlidersHorizontal />
-          <span className="hidden sm:inline">Sections</span>
+          <span className="hidden sm:inline lg:hidden 2xl:inline">Sections</span>
         </Button>
       </DialogTrigger>
 

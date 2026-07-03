@@ -6,7 +6,6 @@ import dynamic from "next/dynamic";
 import { useResumeStore } from "@/lib/store";
 import { useAgencyStore } from "@/lib/agency-store";
 import { useDebounce } from "@/lib/use-debounce";
-import { structureKey } from "./structure-key";
 
 // Lazy-load the renderers (heavy, browser-only). ssr:false is required because
 // both touch the DOM / @react-pdf internals.
@@ -56,7 +55,7 @@ export function LivePreview({ useImages = false }: { useImages?: boolean }) {
       {useImages ? (
         <PdfImagePreview data={debounced} />
       ) : (
-        <PdfViewerInner key={structureKey(debounced)} data={debounced} />
+        <PdfViewerInner data={debounced} />
       )}
     </div>
   );

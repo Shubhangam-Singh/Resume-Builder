@@ -396,7 +396,7 @@ export function Metro({ data }: { data: ResumeData }) {
       title={basics.name ? `${basics.name} — Resume` : "Resume"}
       author={basics.name || undefined}
     >
-      <Page size="LETTER" style={styles.page}>
+      <Page size={data.meta.pageSize ?? "LETTER"} style={styles.page}>
         <View style={agencyBranding?.logoBase64 ? [styles.headerCard, { paddingRight: sc.s(90) }] : styles.headerCard}>
           <Text style={styles.name}>{basics.name || "Your Name"}</Text>
           {basics.label ? <Text style={secondary ? [styles.label, { color: secondary }] : styles.label}>{basics.label}</Text> : null}

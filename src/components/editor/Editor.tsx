@@ -1,6 +1,7 @@
 "use client";
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useUiStore, type EditorTab } from "@/lib/ui-store";
 import { BasicsSection } from "./sections/BasicsSection";
 import { CertificatesSection } from "./sections/CertificatesSection";
 import { CustomSectionsEditor } from "./sections/CustomSectionsEditor";
@@ -20,8 +21,14 @@ const TABS = [
 ] as const;
 
 export function Editor() {
+  const tab = useUiStore((s) => s.editorTab);
+  const setTab = useUiStore((s) => s.setEditorTab);
   return (
-    <Tabs defaultValue="basics" className="flex h-full flex-col">
+    <Tabs
+      value={tab}
+      onValueChange={(v) => setTab(v as EditorTab)}
+      className="flex h-full flex-col"
+    >
       <TabsList className="grid h-auto w-full grid-cols-4 gap-1 sm:grid-cols-7">
         {TABS.map((t) => (
           <TabsTrigger key={t.value} value={t.value} className="text-xs">
