@@ -5,6 +5,7 @@ import {
   Briefcase,
   Crosshair,
   Download,
+  Gauge,
   FileText,
   FileType,
   History,
@@ -309,6 +310,17 @@ export function CommandPalette() {
         },
       },
       {
+        id: "score",
+        group: "Tools",
+        label: "Resume score",
+        hint: "ATS + writing",
+        icon: <Gauge className="h-4 w-4" />,
+        run: () => {
+          close();
+          openDialog("score");
+        },
+      },
+      {
         id: "ats-check",
         group: "Tools",
         label: "ATS check",
@@ -482,7 +494,7 @@ export function CommandPalette() {
             onChange={(e) => setQuery(e.target.value)}
             onKeyDown={onInputKeyDown}
             placeholder="Type a command… (templates, themes, export, tools)"
-            className="h-11 w-full bg-transparent text-sm outline-none placeholder:text-muted-foreground"
+            className="h-11 w-full bg-transparent text-base outline-none placeholder:text-muted-foreground sm:text-sm"
             aria-label="Search commands"
           />
           <kbd className="hidden rounded border bg-muted px-1.5 py-0.5 text-[10px] text-muted-foreground sm:block">

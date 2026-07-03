@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 
 import { AiImproveButton } from "@/components/ai/AiImproveButton";
+import { BulletSuggestions } from "@/components/editor/BulletSuggestions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -320,13 +321,19 @@ export function BulletEditor({
     <div className="space-y-1.5">
       <div className="flex items-center justify-between gap-2">
         <Label>{label}</Label>
-        {aiContext !== undefined ? (
-          <AiImproveButton
-            bullets={rows.filter((r) => r.trim())}
-            context={aiContext}
-            onResult={commit}
+        <div className="flex items-center gap-1">
+          <BulletSuggestions
+            hint={aiContext}
+            onInsert={(text) => commit([...rows.filter((r) => r.trim()), text])}
           />
-        ) : null}
+          {aiContext !== undefined ? (
+            <AiImproveButton
+              bullets={rows.filter((r) => r.trim())}
+              context={aiContext}
+              onResult={commit}
+            />
+          ) : null}
+        </div>
       </div>
 
       <div className="space-y-1.5">
@@ -340,13 +347,15 @@ export function BulletEditor({
             onDragOver={(e) => e.preventDefault()}
             onDrop={() => dropOn(i)}
           >
+            {/* HTML5 drag doesn't fire on touch, so the grip is desktop-only;
+                the up/down buttons handle reordering everywhere. */}
             <button
               type="button"
               draggable
               onDragStart={() => setDragIndex(i)}
               onDragEnd={() => setDragIndex(null)}
               aria-label="Drag to reorder"
-              className="mt-1.5 cursor-grab text-muted-foreground/60 hover:text-muted-foreground active:cursor-grabbing"
+              className="mt-1.5 hidden cursor-grab text-muted-foreground/60 hover:text-muted-foreground active:cursor-grabbing sm:block"
             >
               <GripVertical className="h-4 w-4" />
             </button>

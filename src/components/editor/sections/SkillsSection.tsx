@@ -25,7 +25,7 @@ function LevelSelect({
         value={value ?? ""}
         onChange={(e) => onChange(e.target.value || undefined)}
         className={cn(
-          "flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm",
+          "flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-base shadow-sm sm:text-sm",
           "focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring",
           !value && "text-muted-foreground",
         )}

@@ -150,7 +150,7 @@ export function ApplyTracker({
                         status: e.target.value as ApplicationStatus,
                       })
                     }
-                    className="h-9 rounded-md border border-input bg-background px-2 text-sm"
+                    className="h-9 rounded-md border border-input bg-background px-2 text-base sm:text-sm"
                     aria-label="Status"
                   >
                     {APPLICATION_STATUSES.map((s) => (

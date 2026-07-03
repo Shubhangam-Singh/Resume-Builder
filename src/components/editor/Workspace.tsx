@@ -25,7 +25,7 @@ import { Wizard, wizardIsDone, markWizardDone } from "@/components/onboarding/Wi
 import { clearShareParam, decodeResumeFromUrl } from "@/lib/share/url";
 import { useResumeStore } from "@/lib/store";
 import { useUiStore } from "@/lib/ui-store";
-import { CompletenessBadge } from "./CompletenessBadge";
+import { ScoreBadge } from "./ScoreDashboard";
 import { Editor } from "./Editor";
 import { MoreMenu } from "./MoreMenu";
 import { ResumeManager } from "./ResumeManager";
@@ -126,7 +126,7 @@ export function Workspace() {
             <ShieldCheck className="h-3.5 w-3.5" />
             Runs entirely in your browser
           </span>
-          <CompletenessBadge />
+          <ScoreBadge />
           <button
             type="button"
             onClick={() => openDialog("palette")}

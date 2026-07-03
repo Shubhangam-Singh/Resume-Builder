@@ -203,7 +203,7 @@ export function AiSettings({
               id="ai-model"
               value={models[provider]}
               onChange={(e) => setModel(e.target.value)}
-              className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-base ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring sm:text-sm"
             >
               {meta.models.map((m) => (
                 <option key={m.id} value={m.id}>

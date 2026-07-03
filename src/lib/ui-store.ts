@@ -18,6 +18,7 @@ export type EditorTab =
 /** Dialogs the palette can open. Their host components watch this key. */
 export type GlobalDialog =
   | "palette"
+  | "score"
   | "ats-check"
   | "share"
   | "version-history"
