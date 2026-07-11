@@ -19,9 +19,11 @@ import {
   parseWorkEntries,
 } from "./entries";
 import { extractName } from "./name";
-import { detectSections } from "./sections";
+import { detectSections, type ParseHints } from "./sections";
 import { normalizeText } from "./normalize";
 import { parseSkillsSection } from "./skills";
+
+export type { ParseHints };
 
 export interface ParseSummary {
   name: boolean;
@@ -60,12 +62,12 @@ function safe<T>(fn: () => T, fallback: T): T {
   }
 }
 
-export function parseResumeText(rawText: string): ParseResult {
+export function parseResumeText(rawText: string, hints?: ParseHints): ParseResult {
   const data = emptyResume();
   const text = safe(() => normalizeText(rawText), "");
 
   if (text) {
-    const sections = safe(() => detectSections(text), { header: text });
+    const sections = safe(() => detectSections(text, hints), { header: text });
 
     const name = safe(() => extractName(text, sections), "");
     data.basics.name = name;

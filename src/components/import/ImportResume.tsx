@@ -21,7 +21,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
-import { ACCEPT_ATTR, extractText } from "@/lib/import/extract";
+import { ACCEPT_ATTR, extractResume } from "@/lib/import/extract";
 import { selectActiveKey, selectActiveModel, useAiStore } from "@/lib/ai/store";
 import { parseResumeText, type ParseResult } from "@/lib/parser";
 import { useResumeStore } from "@/lib/store";
@@ -70,9 +70,9 @@ export function ImportResume() {
     setAiError("");
     setMethod("heuristic");
     try {
-      const text = await extractText(file);
+      const { text, headingLines } = await extractResume(file);
       setExtractedText(text);
-      setResult(parseResumeText(text));
+      setResult(parseResumeText(text, { headingLines }));
       setStatus("review");
     } catch (err) {
       setError(

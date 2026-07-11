@@ -71,19 +71,25 @@ function validateFile(file: File): void {
   }
 }
 
-export async function extractText(file: File): Promise<string> {
+export interface ExtractedResume {
+  text: string;
+  /** Large-font lines from the PDF — parser hints for section headers. */
+  headingLines?: string[];
+}
+
+export async function extractResume(file: File): Promise<ExtractedResume> {
   // Security: validate size and MIME type before doing any real work.
   validateFile(file);
 
   const kind = detectKind(file)!;
   if (kind === "pdf") {
-    const { extractPdfText } = await import("./pdf");
-    return extractPdfText(file);
+    const { extractPdfDocument } = await import("./pdf");
+    return extractPdfDocument(file);
   }
   if (kind === "docx") {
     const { extractDocxText } = await import("./docx");
-    return extractDocxText(file);
+    return { text: await extractDocxText(file) };
   }
   // kind === "txt"
-  return file.text();
+  return { text: await file.text() };
 }

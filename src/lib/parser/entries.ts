@@ -25,7 +25,9 @@ import {
 import { ROLE_WORD_SET } from "./name";
 import type { Sections } from "./sections";
 
-const BULLET = /^(?:[•*]|-)\s+/;
+// Bullet markers seen in the wild: •/* (normalized glyphs), dashes, Word's
+// sub-bullet "o", and numbered lists ("1." / "2)").
+const BULLET = /^(?:[•*‣◦▪>»]|[-–]|o|\d{1,2}[.)])\s+/;
 
 const isBullet = (line: string) => BULLET.test(line);
 const stripBullet = (line: string) => line.replace(BULLET, "").trim();
@@ -43,11 +45,73 @@ function hasRoleWord(text: string): boolean {
     .some((w) => ROLE_WORD_SET.has(w));
 }
 
+// Legal/organizational suffixes that mark a segment as a company name.
+const COMPANY_SUFFIX =
+  /^(?:inc|llc|llp|ltd|plc|pvt(?:\.?\s*ltd)?|co|corp|gmbh|s\.?a\.?|ag|bv|oy|ab|pte(?:\.?\s*ltd)?)\.?$/i;
+const COMPANY_WORD =
+  /\b(?:inc|llc|llp|ltd|plc|pvt|corp|corporation|gmbh|technologies|technology|solutions|labs?|systems|softwares?|consulting|consultancy|group|studios?|media|networks?|industries|enterprises?|international|global|services|ventures|partners|bank|agency|digital|infotech|tech)\b\.?/i;
+
+/**
+ * A wrapped continuation of the previous bullet (PDF line-wrap): starts
+ * lowercase / with a digit / an opening bracket, or the previous bullet
+ * clearly didn't finish its sentence.
+ */
+function isContinuation(line: string, prev: string): boolean {
+  if (/^[a-z0-9(&+]/.test(line)) return true;
+  if (/[,;:&/]$/.test(prev)) return true;
+  return false;
+}
+
 const SEPARATORS = /\s+[|\-–—]\s+|\s+·\s+|,\s+/;
 
-/** "Remote" / "Hybrid" / "City, ST" location detection inside a meta line. */
+// Regions we accept as the second half of "City, Region" — countries, Indian
+// states, US/Canada/UK/AU regions. Keeps "Designer, Acme Corp" from reading as
+// a location while still catching "Bengaluru, Karnataka" or "Berlin, Germany".
+const KNOWN_REGIONS = new Set(
+  [
+    // Countries frequently on resumes
+    "india", "usa", "united states", "united states of america", "uk",
+    "united kingdom", "canada", "australia", "germany", "france",
+    "netherlands", "spain", "italy", "ireland", "singapore", "uae",
+    "united arab emirates", "dubai", "japan", "china", "brazil", "mexico",
+    "poland", "sweden", "norway", "denmark", "finland", "switzerland",
+    "austria", "belgium", "portugal", "new zealand", "south africa",
+    "nigeria", "kenya", "egypt", "israel", "saudi arabia", "qatar",
+    "bangladesh", "pakistan", "sri lanka", "nepal", "philippines",
+    "indonesia", "malaysia", "thailand", "vietnam", "south korea", "russia",
+    // Indian states & UTs
+    "andhra pradesh", "arunachal pradesh", "assam", "bihar", "chhattisgarh",
+    "delhi", "new delhi", "goa", "gujarat", "haryana", "himachal pradesh",
+    "jharkhand", "karnataka", "kerala", "madhya pradesh", "maharashtra",
+    "manipur", "meghalaya", "mizoram", "nagaland", "odisha", "punjab",
+    "rajasthan", "sikkim", "tamil nadu", "telangana", "tripura",
+    "uttar pradesh", "uttarakhand", "west bengal", "chandigarh",
+    "jammu and kashmir", "puducherry",
+    // US states (full names)
+    "alabama", "alaska", "arizona", "arkansas", "california", "colorado",
+    "connecticut", "delaware", "florida", "georgia", "hawaii", "idaho",
+    "illinois", "indiana", "iowa", "kansas", "kentucky", "louisiana",
+    "maine", "maryland", "massachusetts", "michigan", "minnesota",
+    "mississippi", "missouri", "montana", "nebraska", "nevada",
+    "new hampshire", "new jersey", "new mexico", "new york",
+    "north carolina", "north dakota", "ohio", "oklahoma", "oregon",
+    "pennsylvania", "rhode island", "south carolina", "south dakota",
+    "tennessee", "texas", "utah", "vermont", "virginia", "washington",
+    "west virginia", "wisconsin", "wyoming",
+    // Canada / UK / AU
+    "ontario", "quebec", "british columbia", "alberta", "manitoba",
+    "saskatchewan", "nova scotia", "england", "scotland", "wales",
+    "northern ireland", "new south wales", "victoria", "queensland",
+    "western australia", "south australia", "tasmania",
+  ],
+);
+
+const MULTIWORD_PLACE =
+  /([A-Z][\p{L}.'\-]+(?:\s+[A-Z][\p{L}.'\-]+){0,2}),\s*([A-Z][\p{L}.'\-]+(?:\s+[A-Z][\p{L}.'\-]+){0,2})/gu;
+
+/** "Remote" / "City, ST" / "City, Known-Region" detection inside a meta line. */
 function extractLocation(text: string): { value: string; rest: string } | null {
-  let m = text.match(/\b(remote|hybrid|on-?site)\b/i);
+  let m = text.match(/\b(remote|hybrid|on-?site|wfh)\b/i);
   if (m) {
     const value = m[1][0].toUpperCase() + m[1].slice(1).toLowerCase();
     return { value, rest: text.replace(m[0], " ").trim() };
@@ -56,11 +120,38 @@ function extractLocation(text: string): { value: string; rest: string } | null {
     /\b([A-Z][a-zA-Z.\-]+(?:\s+[A-Z][a-zA-Z.\-]+)?),\s*([A-Z]{2})\b/,
   );
   if (m) return { value: m[0], rest: text.replace(m[0], " ").trim() };
+
+  // "City, Tamil Nadu" / "Berlin, Germany" — region must be a known place so
+  // "Designer, Acme Corp" never reads as a location.
+  MULTIWORD_PLACE.lastIndex = 0;
+  let g: RegExpExecArray | null;
+  while ((g = MULTIWORD_PLACE.exec(text)) !== null) {
+    if (KNOWN_REGIONS.has(g[2].toLowerCase())) {
+      return { value: `${g[1]}, ${g[2]}`, rest: text.replace(g[0], " ").trim() };
+    }
+  }
   return null;
 }
 
 const clean = (s: string) =>
   s.replace(/^[\s,|\-–—·]+|[\s,|\-–—·]+$/g, "").replace(/[^\S\n]{2,}/g, " ").trim();
+
+/** Split on separators, re-attaching legal suffixes ("Acme, Inc." stays one). */
+function splitSegments(text: string): string[] {
+  const parts = text
+    .split(SEPARATORS)
+    .map((s) => clean(s))
+    .filter(Boolean);
+  const merged: string[] = [];
+  for (const part of parts) {
+    if (merged.length > 0 && COMPANY_SUFFIX.test(part)) {
+      merged[merged.length - 1] += `, ${part}`;
+    } else {
+      merged.push(part);
+    }
+  }
+  return merged;
+}
 
 /** Split "Title at Company" / "Title — Company" / "Company, Title" into parts. */
 function splitTitleCompany(text: string): { position: string; company: string } {
@@ -69,19 +160,22 @@ function splitTitleCompany(text: string): { position: string; company: string } 
   const at = t.match(/^(.*?)\s+(?:at|@|for|with)\s+(.*)$/i);
   if (at) return { position: clean(at[1]), company: clean(at[2]) };
 
-  const parts = t
-    .split(SEPARATORS)
-    .map((s) => clean(s))
-    .filter(Boolean);
+  const parts = splitSegments(t);
   if (parts.length >= 2) {
-    const aRole = hasRoleWord(parts[0]);
-    const bRole = hasRoleWord(parts[1]);
-    if (aRole && !bRole) return { position: parts[0], company: parts[1] };
-    if (bRole && !aRole) return { position: parts[1], company: parts[0] };
-    return { position: parts[0], company: parts[1] };
+    const [a, b] = parts;
+    const aRole = hasRoleWord(a);
+    const bRole = hasRoleWord(b);
+    const aCo = COMPANY_WORD.test(a);
+    const bCo = COMPANY_WORD.test(b);
+    // Company markers outrank role words: "Acme Technologies, Engineer".
+    if (aCo && !bCo && !aRole) return { position: b, company: a };
+    if (bCo && !aCo && !bRole) return { position: a, company: b };
+    if (aRole && !bRole) return { position: a, company: b };
+    if (bRole && !aRole) return { position: b, company: a };
+    return { position: a, company: b };
   }
 
-  if (hasRoleWord(t)) return { position: t, company: "" };
+  if (hasRoleWord(t) && !COMPANY_WORD.test(t)) return { position: t, company: "" };
   return { position: "", company: t };
 }
 
@@ -127,7 +221,15 @@ function buildWork(block: WorkBlock): WorkEntry {
     const parsed = splitTitleCompany(titleParts[0]);
     position = parsed.position;
     company = parsed.company;
-    if (titleParts.length > 1) summaryParts.push(...titleParts.slice(1));
+    // A second header line is usually the other half of the pair (company
+    // under title or vice versa) — fill whichever slot is still empty.
+    if (titleParts.length > 1) {
+      const next = titleParts[1];
+      if (!company && !hasRoleWord(next)) company = next;
+      else if (!position && hasRoleWord(next)) position = next;
+      else summaryParts.push(next);
+      if (titleParts.length > 2) summaryParts.push(...titleParts.slice(2));
+    }
   }
 
   return {
@@ -141,6 +243,16 @@ function buildWork(block: WorkBlock): WorkEntry {
     summary: summaryParts.join(" "),
     highlights: block.bullets,
   };
+}
+
+/** True when nothing but a date (and maybe a location) is on the line. */
+function isDateOnlyLine(line: string): boolean {
+  const dr = extractDateRange(line);
+  if (!dr) return false;
+  let rest = stripMatched(line, dr.matched);
+  const loc = extractLocation(rest);
+  if (loc) rest = loc.rest;
+  return clean(rest).length <= 3;
 }
 
 export function parseWorkEntries(sections: Sections): WorkEntry[] {
@@ -162,17 +274,19 @@ export function parseWorkEntries(sections: Sections): WorkEntry[] {
       continue;
     }
 
-    const isHeader = lineHasDateRange(line) || hasRoleWord(line);
+    const lineDated = lineHasDateRange(line);
+    const isHeader = lineDated || hasRoleWord(line);
     if (isHeader) {
-      // Continuation of a 2-line header (e.g. company line then title+dates)?
-      if (
-        cur &&
+      const curDated = cur ? cur.meta.some(lineHasDateRange) : false;
+      // Multi-line headers merge in either order — "Title / Company / Dates"
+      // or "Dates / Title, Company" — but two dated lines mean two entries.
+      const mergeable =
+        cur !== null &&
         cur.bullets.length === 0 &&
-        cur.meta.length >= 1 &&
-        cur.meta.length <= 2 &&
-        !cur.meta.some(lineHasDateRange)
-      ) {
-        cur.meta.push(line);
+        ((cur.meta.length <= 2 && !(curDated && lineDated)) ||
+          (cur.meta.length <= 3 && lineDated && !curDated && isDateOnlyLine(line)));
+      if (mergeable) {
+        cur!.meta.push(line);
       } else {
         flush();
         cur = { meta: [line], bullets: [] };
@@ -181,6 +295,12 @@ export function parseWorkEntries(sections: Sections): WorkEntry[] {
       cur = { meta: [line], bullets: [] };
     } else if (cur.bullets.length === 0 && cur.meta.length < 3) {
       cur.meta.push(line);
+    } else if (
+      cur.bullets.length > 0 &&
+      isContinuation(line, cur.bullets[cur.bullets.length - 1])
+    ) {
+      // Wrapped bullet text (PDF line breaks) re-joins its bullet.
+      cur.bullets[cur.bullets.length - 1] += ` ${line}`;
     } else {
       cur.bullets.push(line);
     }
@@ -193,9 +313,9 @@ export function parseWorkEntries(sections: Sections): WorkEntry[] {
 // ---- Education -----------------------------------------------------------
 
 const INSTITUTION_RE =
-  /\b(university|college|institute|institution|school|academy|polytechnic|iit|nit|bits)\b/i;
+  /\b(university|college|institute|institution|school|academy|polytechnic|iit|nit|bits|iiit|vit|srm)\b/i;
 const DEGREE_RE =
-  /\b(ph\.?\s?d|doctorate|m\.?b\.?a|b\.?\s?tech|m\.?\s?tech|b\.?\s?e\b|m\.?\s?e\b|b\.?\s?sc|m\.?\s?sc|b\.?\s?c\.?\s?a|m\.?\s?c\.?\s?a|b\.?\s?s\b|m\.?\s?s\b|b\.?\s?a\b|m\.?\s?a\b|bachelor|master|associate|diploma|high school|secondary|hsc|ssc)\b/i;
+  /\b(ph\.?\s?d|doctorate|m\.?b\.?a|b\.?\s?tech|m\.?\s?tech|b\.?\s?e\b|m\.?\s?e\b|b\.?\s?sc|m\.?\s?sc|b\.?\s?c\.?\s?a|m\.?\s?c\.?\s?a|b\.?\s?s\b|m\.?\s?s\b|b\.?\s?a\b|m\.?\s?a\b|bachelor(?:'?s)?|master(?:'?s)?|associate|diploma|high school|secondary|hsc|ssc)\b/i;
 const SCORE_RE =
   /\b(?:gpa|cgpa|grade)\s*[:\-]?\s*\d(?:\.\d{1,2})?(?:\s*\/\s*\d{1,2})?|\d\.\d{1,2}\s*(?:gpa|cgpa)|\d(?:\.\d{1,2})?\s*\/\s*(?:10|4|5)\b|\b\d{1,3}(?:\.\d{1,2})?\s*%/i;
 
@@ -231,9 +351,27 @@ function buildEducation(lines: string[]): EducationEntry {
   if (degLine) {
     const cleaned = stripMetaNoise(degLine);
     const dm = cleaned.match(DEGREE_RE);
-    if (dm) studyType = dm[0].replace(/\s+/g, " ").trim();
-    const am = cleaned.match(/\b(?:in|of)\s+([A-Za-z][A-Za-z &/\-]{1,40})/i);
-    if (am) area = clean(am[1]);
+    if (dm) {
+      studyType = dm[0].replace(/\s+/g, " ").trim();
+      const am = cleaned.match(/\b(?:in|of)\s+([A-Za-z][A-Za-z &/\-]{1,48})/i);
+      if (am) {
+        area = clean(am[1]);
+      } else if (dm.index !== undefined) {
+        // "B.Tech, Information Technology" — the field follows the degree.
+        const after = clean(
+          cleaned.slice(dm.index + dm[0].length).replace(/^[\s,:\-–—]+/, ""),
+        );
+        const field = after.split(/[|,;]/)[0].trim();
+        if (
+          field.length >= 2 &&
+          field.length <= 48 &&
+          /^[A-Za-z][A-Za-z &/\-.()]*$/.test(field) &&
+          !INSTITUTION_RE.test(field)
+        ) {
+          area = field;
+        }
+      }
+    }
   }
 
   if (!institution && !degLine) institution = stripMetaNoise(lines[0] ?? "");
@@ -294,6 +432,12 @@ const URL_RE = /\b((?:https?:\/\/)?(?:www\.)?[a-z0-9.\-]+\.[a-z]{2,}(?:\/\S*)?)/
 
 function parseProjectHeader(line: string): ProjectEntry {
   let rest = line;
+
+  // Dates in project headers ("Portfolio Site — Jan 2021") aren't part of the
+  // name; the project model has no date fields, so just strip them.
+  const dr = extractDateRange(rest);
+  if (dr) rest = stripMatched(rest, dr.matched);
+
   let url = "";
   const um = rest.match(URL_RE);
   if (um && /\.(com|dev|io|net|org|app|me|co)\b/i.test(um[1])) {
@@ -346,6 +490,12 @@ export function parseProjectEntries(sections: Sections): ProjectEntry[] {
     if (isBullet(line)) {
       if (!cur) cur = { id: uid(), name: "", description: "", highlights: [], url: "", keywords: [] };
       cur.highlights.push(stripBullet(line));
+    } else if (
+      cur &&
+      cur.highlights.length > 0 &&
+      isContinuation(line, cur.highlights[cur.highlights.length - 1])
+    ) {
+      cur.highlights[cur.highlights.length - 1] += ` ${line}`;
     } else {
       flush();
       cur = parseProjectHeader(line);
@@ -386,6 +536,14 @@ export function parseCertificateEntries(sections: Sections): CertificateEntry[] 
       if (split) {
         name = clean(split[1]);
         issuer = clean(split[2]);
+      }
+      // "AWS Certified Developer (Amazon)" — parenthetical issuer.
+      if (!issuer) {
+        const pm = name.match(/^(.*?)\s*\(([^)]{2,40})\)$/);
+        if (pm && !/[,/]/.test(pm[2])) {
+          name = clean(pm[1]);
+          issuer = clean(pm[2]);
+        }
       }
 
       return { id: uid(), name, issuer, date, url: "" };
@@ -458,14 +616,46 @@ export function extractWebsite(text: string): string {
 }
 
 export function extractBasicsLocation(sections: Sections, text: string): Location {
-  const region = { city: "", region: "", countryCode: "" };
-  const header = (sections.header ?? "").trim() || text;
-  const m = header.match(
-    /\b([A-Z][a-zA-Z.\-]+(?:\s+[A-Z][a-zA-Z.\-]+)?),\s*([A-Z]{2})\b/,
-  );
-  if (m) {
-    region.city = m[1];
-    region.region = m[2];
+  const result: Location = { city: "", region: "", countryCode: "" };
+
+  // Prefer an explicitly labeled line anywhere in the document.
+  const labeled = text.match(/\b(?:address|location)\s*[:\-]\s*(.{3,80})/i);
+  const scopes = [
+    labeled?.[1] ?? "",
+    (sections.header ?? "").trim(),
+    (sections.other ?? "").trim(), // sidebar "Contact" blocks land here
+    text,
+  ];
+
+  for (const scope of scopes) {
+    if (!scope) continue;
+    // "City, ST" (2-letter region)
+    const m = scope.match(
+      /\b([A-Z][a-zA-Z.\-]+(?:\s+[A-Z][a-zA-Z.\-]+)?),\s*([A-Z]{2})\b/,
+    );
+    if (m) {
+      result.city = m[1];
+      result.region = m[2];
+      return result;
+    }
+    // "City, Known-Region" ("Vellore, Tamil Nadu" / "Berlin, Germany")
+    MULTIWORD_PLACE.lastIndex = 0;
+    let g: RegExpExecArray | null;
+    while ((g = MULTIWORD_PLACE.exec(scope)) !== null) {
+      if (KNOWN_REGIONS.has(g[2].toLowerCase())) {
+        result.city = g[1];
+        result.region = g[2];
+        return result;
+      }
+    }
+    // A bare known place on its own line ("Bengaluru" / "India")
+    const lone = nonEmptyLines(scope).find((l) =>
+      KNOWN_REGIONS.has(l.toLowerCase()),
+    );
+    if (lone) {
+      result.region = lone;
+      return result;
+    }
   }
-  return region;
+  return result;
 }

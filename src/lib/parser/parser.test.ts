@@ -231,4 +231,155 @@ describe("section detection sanity", () => {
     expect(sections.experience).toMatch(/did things/i);
     expect(sections.skills).toMatch(/python/i);
   });
+
+  it("isolates unknown ALL-CAPS sections so they don't pollute the previous one", () => {
+    const sections = detectSections(
+      normalizeText(
+        "EXPERIENCE\nEngineer at Acme\n• Did things\nSTRENGTHS\nHard worker, fast learner\nEDUCATION\nState University",
+      ),
+    );
+    expect(sections.experience).not.toMatch(/hard worker/i);
+    expect(sections.education).toMatch(/state university/i);
+  });
+
+  it("routes Interests/Declaration/References to an ignored bucket", () => {
+    const sections = detectSections(
+      normalizeText(
+        "EXPERIENCE\nEngineer at Acme\nInterests\nCricket, chess\nDeclaration\nI hereby declare the above is true.",
+      ),
+    );
+    expect(sections.experience).not.toMatch(/cricket|hereby/i);
+  });
+
+  it("uses extractor heading hints, but never before the first known header", () => {
+    const text = normalizeText(
+      "Priya Sharma\nProduct Designer\nEXPERIENCE\nDesigner at Studio\nSelected Clients\nAcme, Globex",
+    );
+    const sections = detectSections(text, {
+      headingLines: ["Priya Sharma", "Selected Clients"],
+    });
+    // Name stays in the header (hint ignored before the first known section)…
+    expect(sections.header).toMatch(/priya sharma/i);
+    // …while the hinted unknown header after it starts a fresh bucket.
+    expect(sections.experience).not.toMatch(/globex/i);
+  });
+});
+
+describe("expanded date formats", () => {
+  it("parses apostrophe years, seasons, full dates and dotted numerics", () => {
+    expect(parseMonthYear("Jan '20")).toBe("2020-01");
+    expect(parseMonthYear("Summer 2021")).toBe("2021-06");
+    expect(parseMonthYear("12 Jan 2020")).toBe("2020-01");
+    expect(parseMonthYear("January 12, 2020")).toBe("2020-01");
+    expect(parseMonthYear("03.2021")).toBe("2021-03");
+    expect(parseMonthYear("12/01/2020")).toBe("2020-12");
+  });
+
+  it("parses month–month ranges sharing one year", () => {
+    expect(extractDateRange("Jan - Mar 2021")).toMatchObject({
+      start: "2021-01",
+      end: "2021-03",
+    });
+  });
+
+  it("expands abbreviated year ranges", () => {
+    expect(extractDateRange("2014 - 18")).toMatchObject({
+      start: "2014",
+      end: "2018",
+    });
+  });
+
+  it("treats 'Since X' as an open-ended range", () => {
+    expect(extractDateRange("Since Jan 2022")).toMatchObject({
+      start: "2022-01",
+      end: "",
+    });
+  });
+});
+
+const OLD_PDF = `RAHUL VERMA
+Senior Data Analyst
+rahul.verma@gmail.com | +91 98220 11223
+Vellore, Tamil Nadu
+
+EXPERIENCE
+Data Analyst | Infosys Ltd | Bengaluru, Karnataka
+Jun 2019 - Present
+o Built dashboards that reduced reporting
+time by 40% across the finance vertical
+1. Automated the monthly close process
+• Led migration of a legacy
+monolith to a modern stack
+
+EDUCATION
+Vellore Institute of Technology
+B.Tech, Information Technology
+2015 - 2019
+
+CERTIFICATIONS
+Deep Learning Specialization (Coursera) 2021
+
+SKILLS
+Python • SQL · Power BI / Tableau
+`;
+
+describe("parseResumeText — old-PDF artifacts", () => {
+  const { data } = parseResumeText(OLD_PDF);
+
+  it("reads Word-style 'o' and numbered bullets as highlights", () => {
+    const w = data.work[0];
+    expect(w.highlights.some((h) => /dashboards/.test(h))).toBe(true);
+    expect(w.highlights.some((h) => /monthly close/.test(h))).toBe(true);
+  });
+
+  it("re-joins bullets wrapped across PDF line breaks", () => {
+    const w = data.work[0];
+    const wrapped = w.highlights.find((h) => /reporting time/.test(h));
+    expect(wrapped).toBeTruthy();
+    const migration = w.highlights.find((h) => /legacy monolith/.test(h));
+    expect(migration).toBeTruthy();
+  });
+
+  it("extracts Indian city + state locations", () => {
+    expect(data.work[0].location).toBe("Bengaluru, Karnataka");
+    expect(data.basics.location.city).toBe("Vellore");
+    expect(data.basics.location.region).toBe("Tamil Nadu");
+  });
+
+  it("keeps the company suffix with the company", () => {
+    expect(data.work[0].name).toMatch(/infosys/i);
+    expect(data.work[0].position).toMatch(/data analyst/i);
+  });
+
+  it("finds the study area after the degree without 'in/of'", () => {
+    expect(data.education[0].area).toMatch(/information technology/i);
+    expect(data.education[0].studyType).toMatch(/b\.?tech/i);
+  });
+
+  it("reads a parenthetical certificate issuer", () => {
+    expect(data.certificates[0].name).toMatch(/deep learning/i);
+    expect(data.certificates[0].issuer).toMatch(/coursera/i);
+    expect(data.certificates[0].date).toBe("2021");
+  });
+
+  it("splits skills on bullets, middots and spaced slashes", () => {
+    const all = data.skills.flatMap((s) => s.keywords);
+    expect(all).toEqual(
+      expect.arrayContaining(["Python", "SQL", "Power BI", "Tableau"]),
+    );
+  });
+});
+
+describe("normalization — old-PDF glyphs", () => {
+  it("expands ligatures and re-joins hyphenated line wraps", () => {
+    const out = normalizeText("Certiﬁed in develop-\nment and workﬂows");
+    expect(out).toContain("Certified");
+    expect(out).toContain("development");
+    expect(out).toContain("workflows");
+  });
+
+  it("converts private-use (Wingdings) bullets", () => {
+    const out = normalizeText(" Shipped the feature");
+    expect(out).toContain("• Shipped the feature");
+  });
 });

@@ -304,8 +304,10 @@ export function parseSkillsSection(sectionText: string): SkillEntry[] {
 
   const splitTokens = (s: string) =>
     s
-      .split(/[,;|]+/)
-      .map((t) => t.trim())
+      // " / " with spaces separates items; "CI/CD", "TCP/IP" stay intact.
+      .replace(/\s\/\s/g, ",")
+      .split(/[,;|•·]+/)
+      .map((t) => t.trim().replace(/\.$/, ""))
       .filter((t) => t.length > 0 && t.length <= 60)
       .map(normalizeSkillToken);
 
