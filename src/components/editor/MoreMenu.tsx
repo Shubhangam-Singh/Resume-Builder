@@ -37,8 +37,10 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { downloadResumeText } from "@/lib/export/text";
 import { downloadResumeJson, parseResumeJson } from "@/lib/persist/json";
+import { toast } from "@/lib/toast";
 import { useResumeStore } from "@/lib/store";
 import { useUiStore } from "@/lib/ui-store";
 
@@ -86,8 +88,9 @@ export function MoreMenu() {
     if (!file) return;
     try {
       setResume(parseResumeJson(await file.text()));
+      toast("Resume imported.", "success");
     } catch {
-      alert("That doesn't look like a valid resume JSON file.");
+      toast("That doesn't look like a valid resume JSON file.", "error");
     }
   }
 
@@ -97,7 +100,7 @@ export function MoreMenu() {
       await m.downloadResumeDocx(resume);
     } catch (err) {
       console.error("DOCX export failed", err);
-      alert("Sorry — something went wrong creating the Word file.");
+      toast("Something went wrong creating the Word file.", "error");
     }
   }
 
@@ -107,13 +110,15 @@ export function MoreMenu() {
       await m.printResume(resume);
     } catch (err) {
       console.error("Print failed", err);
-      alert("Sorry — something went wrong preparing the print.");
+      toast("Something went wrong preparing the print.", "error");
     }
   }
 
-  function confirmThen(message: string, action: () => void) {
-    if (window.confirm(message)) action();
-  }
+  const [confirm, setConfirm] = useState<{
+    title: string;
+    description: string;
+    action: () => void;
+  } | null>(null);
 
   return (
     <>
@@ -195,10 +200,11 @@ export function MoreMenu() {
           </DropdownMenuItem>
           <DropdownMenuItem
             onSelect={() =>
-              confirmThen(
-                "Replace the current resume with the sample content?",
-                loadSample,
-              )
+              setConfirm({
+                title: "Load the sample resume?",
+                description: "This replaces your current resume with the sample content. You can undo with Ctrl+Z.",
+                action: loadSample,
+              })
             }
           >
             <Sparkles />
@@ -206,10 +212,11 @@ export function MoreMenu() {
           </DropdownMenuItem>
           <DropdownMenuItem
             onSelect={() =>
-              confirmThen(
-                "Clear all fields and start from a blank resume? You can undo with Ctrl+Z.",
-                resetResume,
-              )
+              setConfirm({
+                title: "Start from a blank resume?",
+                description: "This clears every field. You can undo with Ctrl+Z.",
+                action: resetResume,
+              })
             }
           >
             <RotateCcw />
@@ -227,6 +234,15 @@ export function MoreMenu() {
       <Wizard open={wizardOpen} onOpenChange={setWizardOpen} />
       <CoverLetterDialog open={coverLetterOpen} onOpenChange={setCoverLetterOpen} />
       <TailorDialog open={tailorOpen} onOpenChange={setTailorOpen} />
+      <ConfirmDialog
+        open={confirm !== null}
+        onOpenChange={(v) => {
+          if (!v) setConfirm(null);
+        }}
+        title={confirm?.title ?? ""}
+        description={confirm?.description}
+        onConfirm={() => confirm?.action()}
+      />
 
       <input
         ref={inputRef}

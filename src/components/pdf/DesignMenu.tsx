@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef } from "react";
-import { Check, Palette, Trash2, Upload } from "lucide-react";
+import { Check, Palette, Pipette, Trash2, Upload } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -22,6 +22,7 @@ import {
   THEME_PRESETS,
 } from "@/lib/resume/theme";
 import type { DateFormat } from "@/lib/resume/types";
+import { toast } from "@/lib/toast";
 import { cn } from "@/lib/utils";
 import { useResumeStore } from "@/lib/store";
 
@@ -63,7 +64,7 @@ export function DesignMenu() {
   function handleFontFile(file: File | undefined) {
     if (!file) return;
     if (!file.name.endsWith(".ttf")) {
-      alert("Only .ttf files are supported by the PDF renderer.");
+      toast("Only .ttf files are supported by the PDF renderer.", "error");
       return;
     }
     const reader = new FileReader();
@@ -149,6 +150,37 @@ export function DesignMenu() {
               onClick={() => setThemeColor(a.id)}
             />
           ))}
+          {/* Custom color — any hex; resolveAccent passes raw "#…" through. */}
+          {(() => {
+            const isCustom = !!themeColor?.startsWith("#") && !secondaryColor;
+            return (
+              <label
+                title="Custom color…"
+                className={cn(
+                  "relative flex h-6 w-6 cursor-pointer items-center justify-center rounded-full ring-offset-2 ring-offset-background transition-shadow",
+                  isCustom && "ring-2 ring-ring",
+                )}
+                style={{
+                  background: isCustom
+                    ? themeColor
+                    : "conic-gradient(#ef4444, #f59e0b, #22c55e, #06b6d4, #3b82f6, #a855f7, #ef4444)",
+                }}
+              >
+                <input
+                  type="color"
+                  value={themeColor?.startsWith("#") ? themeColor : "#4f46e5"}
+                  onChange={(e) => setThemeColor(e.target.value)}
+                  className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
+                  aria-label="Pick a custom accent color"
+                />
+                {isCustom ? (
+                  <Check className="h-3.5 w-3.5 text-white" />
+                ) : (
+                  <Pipette className="h-3 w-3 text-white drop-shadow" />
+                )}
+              </label>
+            );
+          })()}
         </div>
 
         <DropdownMenuSeparator />

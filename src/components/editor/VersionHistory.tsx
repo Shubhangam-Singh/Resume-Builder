@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { History, Loader2, RotateCcw, Save, Trash2 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import {
   Dialog,
   DialogContent,
@@ -59,15 +60,10 @@ export function VersionHistory({
     await refresh();
   }
 
-  async function handleRestore(snap: Snapshot) {
-    if (
-      window.confirm(
-        "Restore this version? Your current resume will be replaced (you can undo with Ctrl+Z).",
-      )
-    ) {
-      setResume(snap.data);
-      onOpenChange(false);
-    }
+  const [restoreTarget, setRestoreTarget] = useState<Snapshot | null>(null);
+
+  function handleRestore(snap: Snapshot) {
+    setRestoreTarget(snap);
   }
 
   async function handleDelete(snap: Snapshot) {
@@ -190,6 +186,22 @@ export function VersionHistory({
           Tip: snapshots compare against your current resume.
         </p>
       </DialogContent>
+
+      <ConfirmDialog
+        open={restoreTarget !== null}
+        onOpenChange={(v) => {
+          if (!v) setRestoreTarget(null);
+        }}
+        title="Restore this version?"
+        description="Your current resume will be replaced. You can undo with Ctrl+Z."
+        confirmLabel="Restore"
+        onConfirm={() => {
+          if (restoreTarget) {
+            setResume(restoreTarget.data);
+            onOpenChange(false);
+          }
+        }}
+      />
     </Dialog>
   );
 }

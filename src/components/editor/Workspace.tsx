@@ -16,6 +16,7 @@ import { TemplateSwitcher } from "@/components/pdf/TemplateSwitcher";
 import { ImportResume } from "@/components/import/ImportResume";
 import { AtsChecker } from "@/components/ats/AtsChecker";
 import { CommandPalette } from "@/components/CommandPalette";
+import { Toaster } from "@/components/Toaster";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { cn } from "@/lib/utils";
 import { useMediaQuery } from "@/lib/use-media-query";
@@ -232,6 +233,9 @@ export function Workspace() {
 
       {/* Ctrl+K command palette */}
       <CommandPalette />
+
+      {/* Toast notifications */}
+      <Toaster />
     </div>
   );
 }

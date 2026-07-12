@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Download, Loader2 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
+import { toast } from "@/lib/toast";
 import { useResumeStore } from "@/lib/store";
 import { useAgencyStore } from "@/lib/agency-store";
 
@@ -23,8 +24,7 @@ export function DownloadButton() {
       });
     } catch (err) {
       console.error("Failed to generate PDF", err);
-      // Best-effort: surface a minimal message without a heavy toast system.
-      alert("Sorry — something went wrong generating the PDF. Please retry.");
+      toast("Something went wrong generating the PDF. Please retry.", "error");
     } finally {
       setBusy(false);
     }

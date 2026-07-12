@@ -16,6 +16,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { generateCoverLetter } from "@/lib/ai/cover-letter";
 import { selectActiveKey, selectActiveModel, useAiStore } from "@/lib/ai/store";
+import { toast } from "@/lib/toast";
 import { useResumeStore } from "@/lib/store";
 
 function letterFileName(name: string, ext: string): string {
@@ -127,7 +128,7 @@ export function CoverLetterDialog({
       URL.revokeObjectURL(url);
     } catch (err) {
       console.error("Cover letter PDF failed", err);
-      alert("Sorry — something went wrong generating the PDF. Please retry.");
+      toast("Something went wrong generating the PDF. Please retry.", "error");
     }
   }
 

@@ -6,6 +6,7 @@ import { Loader2, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { generateSummary } from "@/lib/ai/summary";
 import { selectActiveKey, selectActiveModel, useAiStore } from "@/lib/ai/store";
+import { toast } from "@/lib/toast";
 import { useResumeStore } from "@/lib/store";
 
 /**
@@ -29,7 +30,7 @@ export function AiSummaryButton() {
       const summary = await generateSummary(resume, { provider, apiKey, model });
       if (summary) updateBasics({ summary });
     } catch (err) {
-      alert(err instanceof Error ? err.message : "AI request failed.");
+      toast(err instanceof Error ? err.message : "AI request failed.", "error");
     } finally {
       setBusy(false);
     }

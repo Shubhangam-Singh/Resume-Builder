@@ -52,6 +52,9 @@ export function IntroSplash() {
             }}
           />
         </div>
+        <p className="mt-1 text-[11px] text-muted-foreground/60">
+          by Shubhangam Singh
+        </p>
       </div>
     </div>
   );

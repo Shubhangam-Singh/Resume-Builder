@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Check, Copy, Files, Pencil, Plus, Trash2 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import {
   Dialog,
   DialogContent,
@@ -12,6 +13,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import { NameDialog } from "@/components/ui/name-dialog";
 import { cn } from "@/lib/utils";
 import { emptyResume, uid } from "@/lib/resume/factory";
 import { useResumeStore } from "@/lib/store";
@@ -44,6 +46,12 @@ export function ResumeManager() {
 
   const [open, setOpen] = useState(false);
   const [docs, setDocs] = useState<SavedDoc[]>([]);
+  const [namePrompt, setNamePrompt] = useState<{
+    title: string;
+    defaultValue: string;
+    submit: (name: string) => void;
+  } | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<SavedDoc | null>(null);
 
   async function refresh() {
     setDocs(await listDocs());
@@ -77,49 +85,65 @@ export function ResumeManager() {
     setOpen(false);
   }
 
-  async function createNew() {
-    const name = window.prompt("Name this resume", "My resume");
-    if (name === null) return;
-    await persistCurrent();
-    const doc: SavedDoc = {
-      id: uid(),
-      name: name.trim() || "Untitled",
-      updatedAt: Date.now(),
-      data: emptyResume(),
-    };
-    await saveDoc(doc);
-    await setActiveId(doc.id);
-    loadDocument(doc);
-    setOpen(false);
+  function createNew() {
+    setNamePrompt({
+      title: "Name this resume",
+      defaultValue: "My resume",
+      submit: (name) => {
+        void (async () => {
+          await persistCurrent();
+          const doc: SavedDoc = {
+            id: uid(),
+            name,
+            updatedAt: Date.now(),
+            data: emptyResume(),
+          };
+          await saveDoc(doc);
+          await setActiveId(doc.id);
+          loadDocument(doc);
+          setOpen(false);
+        })();
+      },
+    });
   }
 
-  async function duplicate() {
-    const name = window.prompt("Name this copy", `${documentName} (copy)`);
-    if (name === null) return;
-    await persistCurrent();
-    const doc: SavedDoc = {
-      id: uid(),
-      name: name.trim() || `${documentName} (copy)`,
-      updatedAt: Date.now(),
-      data: structuredClone(resume),
-    };
-    await saveDoc(doc);
-    await setActiveId(doc.id);
-    loadDocument(doc);
-    setOpen(false);
+  function duplicate() {
+    setNamePrompt({
+      title: "Name this copy",
+      defaultValue: `${documentName} (copy)`,
+      submit: (name) => {
+        void (async () => {
+          await persistCurrent();
+          const doc: SavedDoc = {
+            id: uid(),
+            name,
+            updatedAt: Date.now(),
+            data: structuredClone(resume),
+          };
+          await saveDoc(doc);
+          await setActiveId(doc.id);
+          loadDocument(doc);
+          setOpen(false);
+        })();
+      },
+    });
   }
 
-  async function rename(doc: SavedDoc) {
-    const name = window.prompt("Rename resume", doc.name);
-    if (name === null) return;
-    const trimmed = name.trim() || "Untitled";
-    if (doc.id === documentId) setDocumentName(trimmed);
-    await saveDoc({ ...doc, name: trimmed, updatedAt: Date.now() });
-    await refresh();
+  function rename(doc: SavedDoc) {
+    setNamePrompt({
+      title: "Rename resume",
+      defaultValue: doc.name,
+      submit: (name) => {
+        void (async () => {
+          if (doc.id === documentId) setDocumentName(name);
+          await saveDoc({ ...doc, name, updatedAt: Date.now() });
+          await refresh();
+        })();
+      },
+    });
   }
 
-  async function remove(doc: SavedDoc) {
-    if (!window.confirm(`Delete “${doc.name}”? This can't be undone.`)) return;
+  async function removeConfirmed(doc: SavedDoc) {
     await deleteDoc(doc.id);
     if (doc.id === documentId) {
       const remaining = await listDocs();
@@ -142,6 +166,7 @@ export function ResumeManager() {
   }
 
   return (
+    <>
     <Dialog open={open} onOpenChange={handleOpen}>
       <DialogTrigger asChild>
         <Button variant="ghost" size="sm" aria-label="Manage resumes" title={`Manage resumes — ${documentName}`}>
@@ -204,7 +229,7 @@ export function ResumeManager() {
                   size="icon"
                   className="h-8 w-8 text-destructive hover:text-destructive"
                   aria-label={`Delete ${doc.name}`}
-                  onClick={() => remove(doc)}
+                  onClick={() => setDeleteTarget(doc)}
                 >
                   <Trash2 className="h-3.5 w-3.5" />
                 </Button>
@@ -225,5 +250,29 @@ export function ResumeManager() {
         </div>
       </DialogContent>
     </Dialog>
+
+    <NameDialog
+      open={namePrompt !== null}
+      onOpenChange={(v) => {
+        if (!v) setNamePrompt(null);
+      }}
+      title={namePrompt?.title ?? ""}
+      defaultValue={namePrompt?.defaultValue ?? ""}
+      onSubmit={(name) => namePrompt?.submit(name)}
+    />
+    <ConfirmDialog
+      open={deleteTarget !== null}
+      onOpenChange={(v) => {
+        if (!v) setDeleteTarget(null);
+      }}
+      title={`Delete “${deleteTarget?.name ?? ""}”?`}
+      description="This permanently removes the saved resume. It can't be undone."
+      confirmLabel="Delete"
+      destructive
+      onConfirm={() => {
+        if (deleteTarget) void removeConfirmed(deleteTarget);
+      }}
+    />
+    </>
   );
 }

@@ -6,6 +6,7 @@ import { ImagePlus, Loader2, Trash2, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { fileToScaledDataUrl } from "@/lib/image";
+import { toast } from "@/lib/toast";
 import { useResumeStore } from "@/lib/store";
 
 export function PhotoField() {
@@ -20,7 +21,7 @@ export function PhotoField() {
     try {
       updateBasics({ image: await fileToScaledDataUrl(file) });
     } catch {
-      alert("Sorry — couldn't read that image. Try a JPG or PNG.");
+      toast("Couldn't read that image. Try a JPG or PNG.", "error");
     } finally {
       setBusy(false);
     }

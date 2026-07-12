@@ -1,8 +1,10 @@
 "use client";
 
+import { useState } from "react";
 import { LayoutTemplate } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import {
   Dialog,
   DialogContent,
@@ -26,18 +28,12 @@ export function RoleSamples({
   onOpenChange: (v: boolean) => void;
 }) {
   const setResume = useResumeStore((s) => s.setResume);
+  const [pendingId, setPendingId] = useState<string | null>(null);
+
+  const pending = ROLE_SAMPLES.find((r) => r.id === pendingId);
 
   function applySample(id: string) {
-    const sample = ROLE_SAMPLES.find((r) => r.id === id);
-    if (!sample) return;
-    if (
-      !window.confirm(
-        `Replace the current resume with the ${sample.role} example? You can undo with Ctrl+Z.`,
-      )
-    )
-      return;
-    setResume(sample.data());
-    onOpenChange(false);
+    setPendingId(id);
   }
 
   return (
@@ -81,6 +77,22 @@ export function RoleSamples({
           </Button>
         </div>
       </DialogContent>
+
+      <ConfirmDialog
+        open={pending !== undefined && pendingId !== null}
+        onOpenChange={(v) => {
+          if (!v) setPendingId(null);
+        }}
+        title={`Start from the ${pending?.role ?? ""} example?`}
+        description="This replaces your current resume. You can undo with Ctrl+Z."
+        confirmLabel="Use this example"
+        onConfirm={() => {
+          if (pending) {
+            setResume(pending.data());
+            onOpenChange(false);
+          }
+        }}
+      />
     </Dialog>
   );
 }
