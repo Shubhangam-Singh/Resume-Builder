@@ -107,6 +107,7 @@ interface ResumeStore {
   setThemeColor: (color: string | undefined) => void;
   setThemePreset: (accent: string, secondary: string) => void;
   setPageSize: (size: "LETTER" | "A4") => void;
+  setBulletStyle: (style: string) => void;
   setCoverLetter: (letter: { jobDescription: string; text: string } | undefined) => void;
   /** Add a keyword to skills (dedup, case-insensitive). Used by the tailor flow. */
   addSkillKeyword: (keyword: string) => void;
@@ -327,6 +328,11 @@ export const useResumeStore = create<ResumeStore>((set) => {
     setPageSize: (size) =>
       mutate((r) => {
         r.meta.pageSize = size;
+      }),
+
+    setBulletStyle: (style) =>
+      mutate((r) => {
+        r.meta.bulletStyle = style;
       }),
 
     setCoverLetter: (letter) =>

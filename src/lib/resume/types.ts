@@ -146,6 +146,8 @@ export interface ResumeMeta {
   themeColor?: string;
   /** Secondary accent (raw hex), set by two-tone theme presets. Absent = no second tone. */
   secondaryColor?: string;
+  /** Bullet marker style id (see theme.ts BULLET_STYLES). Absent = "disc" (•). */
+  bulletStyle?: string;
   /** Layout density preset. Absent = "standard". Quick-sets the spacing below. */
   density?: "compact" | "standard" | "loose";
   /** Font family id (see theme.ts FONTS). Absent = "helvetica". */

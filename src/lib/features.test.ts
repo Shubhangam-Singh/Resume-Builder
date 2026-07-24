@@ -8,8 +8,44 @@ import { diffResumes } from "./resume/diff";
 import { emptyCustomSection, emptyResume, sampleResume } from "./resume/factory";
 import { formatDateRange, formatMonthYear } from "./resume/format";
 import { customKey, resolveSectionOrder } from "./resume/sections";
+import { BULLET_STYLES, resolveBulletGlyph } from "./resume/theme";
 import { getTemplateMeta } from "@/components/pdf/templates/meta";
 import { checkWriting } from "./writing/check";
+
+describe("bullet styles", () => {
+  it("defaults to a dot when unset or unknown", () => {
+    expect(resolveBulletGlyph(undefined)).toBe("•");
+    expect(resolveBulletGlyph("not-a-style")).toBe("•");
+  });
+
+  it("resolves each configured style", () => {
+    expect(resolveBulletGlyph("disc")).toBe("•");
+    expect(resolveBulletGlyph("dash")).toBe("–");
+    expect(resolveBulletGlyph("none")).toBe("");
+  });
+
+  /**
+   * Every glyph must exist in the WinAnsi/PDF standard encoding, otherwise it
+   * renders as a blank/tofu box in the built-in Helvetica, Times and Courier
+   * fonts (which need no embedding and are the default).
+   */
+  it("only uses glyphs the built-in PDF fonts can render", () => {
+    const WINANSI_SAFE = new Set([0x2022, 0x2013, 0x2014, 0x203a, 0x2039, 0x00bb, 0x00ab]);
+    for (const b of BULLET_STYLES) {
+      for (const ch of b.glyph) {
+        const cp = ch.codePointAt(0)!;
+        const ok = cp < 0x80 || WINANSI_SAFE.has(cp);
+        expect(ok, `${b.id} uses unsafe glyph U+${cp.toString(16)}`).toBe(true);
+      }
+    }
+  });
+
+  it("has unique ids and a disc default present", () => {
+    const ids = BULLET_STYLES.map((b) => b.id);
+    expect(new Set(ids).size).toBe(ids.length);
+    expect(ids).toContain("disc");
+  });
+});
 
 describe("date formats", () => {
   it("formats a month/year in each style", () => {

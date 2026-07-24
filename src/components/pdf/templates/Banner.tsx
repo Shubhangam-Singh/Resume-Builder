@@ -18,6 +18,7 @@ import {
   makeScale,
   resolveAccent,
   resolveSecondary,
+  resolveBulletGlyph,
   resolveFont,
   type ResolvedFont,
   type Scale,
@@ -157,10 +158,10 @@ function Chip({ styles, children }: { styles: Styles; children: string }) {
   );
 }
 
-function Bullet({ styles, highlights, children }: { styles: Styles; highlights?: HighlightRule[]; children: string }) {
+function Bullet({ styles, glyph, highlights, children }: { styles: Styles; glyph: string; highlights?: HighlightRule[]; children: string }) {
   return (
     <View style={styles.bulletRow}>
-      <Text style={styles.bulletGlyph}>•</Text>
+      <Text style={styles.bulletGlyph}>{glyph}</Text>
       <HighlightText text={children} highlights={highlights} style={styles.bulletText} />
     </View>
   );
@@ -175,6 +176,7 @@ export function Banner({ data }: { data: ResumeData }) {
   const items = contactItems(basics, agencyBranding);
   const accent = resolveAccent(data.meta.themeColor, DEFAULT_ACCENT);
   const secondary = resolveSecondary(data.meta.secondaryColor);
+  const bulletGlyph = resolveBulletGlyph(data.meta.bulletStyle);
   const font = resolveFont(data.meta.fontFamily);
   const sc = makeScale(data.meta);
   const styles = makeStyles(accent, sc, font);
@@ -216,7 +218,7 @@ export function Banner({ data }: { data: ResumeData }) {
                   <HighlightText text={w.summary} highlights={data.meta.highlights} style={styles.entrySummary} />
                 ) : null}
                 {w.highlights.map((h, i) => (
-                  <Bullet key={i} styles={styles} highlights={data.meta.highlights}>
+                  <Bullet key={i} styles={styles} glyph={bulletGlyph} highlights={data.meta.highlights}>
                     {h}
                   </Bullet>
                 ))}
@@ -275,7 +277,7 @@ export function Banner({ data }: { data: ResumeData }) {
                   <HighlightText text={p.description} highlights={data.meta.highlights} style={styles.entrySummary} />
                 ) : null}
                 {p.highlights.map((h, i) => (
-                  <Bullet key={i} styles={styles} highlights={data.meta.highlights}>
+                  <Bullet key={i} styles={styles} glyph={bulletGlyph} highlights={data.meta.highlights}>
                     {h}
                   </Bullet>
                 ))}
@@ -323,7 +325,7 @@ export function Banner({ data }: { data: ResumeData }) {
           ? (data.customSections ?? []).find((s) => s.id === id)
           : null;
         return cs ? (
-          <CustomSectionView highlights={data.meta.highlights}
+          <CustomSectionView highlights={data.meta.highlights} bullet={bulletGlyph}
             key={key}
             section={cs}
             accent={accent}

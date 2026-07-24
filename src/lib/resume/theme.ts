@@ -60,6 +60,30 @@ export function resolveSecondary(id: string | undefined): string | undefined {
   return ACCENTS.find((a) => a.id === id)?.hex;
 }
 
+// ---- Bullet markers -------------------------------------------------------
+// Glyphs chosen from the WinAnsi/PDF standard encoding so they render in the
+// built-in Helvetica/Times/Courier fonts as well as the bundled TTFs — no
+// missing-glyph boxes. "none" renders an empty marker (hanging indent only).
+
+export interface BulletStyleOption {
+  id: string;
+  label: string;
+  glyph: string;
+}
+
+export const BULLET_STYLES: BulletStyleOption[] = [
+  { id: "disc", label: "Dot", glyph: "•" },
+  { id: "dash", label: "Dash", glyph: "–" },
+  { id: "arrow", label: "Arrow", glyph: "›" },
+  { id: "none", label: "None", glyph: "" },
+];
+
+export function resolveBulletGlyph(id: string | undefined): string {
+  if (id === undefined) return "•";
+  const found = BULLET_STYLES.find((b) => b.id === id);
+  return found ? found.glyph : "•";
+}
+
 // ---- Fonts ----------------------------------------------------------------
 // Built-in PDF fonts need no files; the rest are bundled TTFs in public/fonts,
 // registered lazily (fonts.ts / ensureFontRegistered) so they embed in the PDF

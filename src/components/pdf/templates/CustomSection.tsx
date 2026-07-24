@@ -58,6 +58,7 @@ export function CustomSectionView({
   font,
   dateFormat,
   highlights,
+  bullet = "•",
 }: {
   section: CustomSection;
   accent: string;
@@ -65,6 +66,7 @@ export function CustomSectionView({
   font: ResolvedFont;
   dateFormat?: DateFormat;
   highlights?: HighlightRule[];
+  bullet?: string;
 }) {
   const items = section.items.filter(
     (it) => it.name || it.description || it.highlights.length || it.date,
@@ -99,7 +101,7 @@ export function CustomSectionView({
             ) : null}
             {it.highlights.map((h, i) => (
               <View key={i} style={styles.bulletRow}>
-                <Text style={styles.bulletGlyph}>•</Text>
+                <Text style={styles.bulletGlyph}>{bullet}</Text>
                 <HighlightText text={h} highlights={highlights} style={styles.bulletText} />
               </View>
             ))}

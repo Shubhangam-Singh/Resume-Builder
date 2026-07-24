@@ -13,6 +13,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import {
   ACCENTS,
+  BULLET_STYLES,
   DENSITIES,
   DENSITY_PRESETS,
   FONTS,
@@ -58,6 +59,8 @@ export function DesignMenu() {
   const setLineSpacing = useResumeStore((s) => s.setLineSpacing);
   const setUploadedFont = useResumeStore((s) => s.setUploadedFont);
   const setPageSize = useResumeStore((s) => s.setPageSize);
+  const bulletStyle = useResumeStore((s) => s.resume.meta.bulletStyle) ?? "disc";
+  const setBulletStyle = useResumeStore((s) => s.setBulletStyle);
 
   const fontInputRef = useRef<HTMLInputElement>(null);
 
@@ -291,6 +294,29 @@ export function DesignMenu() {
             >
               <span className="text-xs">{p.label}</span>
               <span className="text-[10px] text-muted-foreground">{p.hint}</span>
+            </button>
+          ))}
+        </div>
+
+        <DropdownMenuSeparator />
+
+        {/* Bullet marker */}
+        <DropdownMenuLabel>Bullet style</DropdownMenuLabel>
+        <div className="flex gap-1.5 px-2 pb-2 pt-1">
+          {BULLET_STYLES.map((b) => (
+            <button
+              key={b.id}
+              type="button"
+              onClick={() => setBulletStyle(b.id)}
+              title={b.label}
+              aria-label={`Bullet style: ${b.label}`}
+              className={cn(
+                "flex flex-1 flex-col items-center gap-0.5 rounded-md border py-1.5 transition-colors",
+                bulletStyle === b.id ? "border-primary bg-accent font-medium" : "hover:bg-accent/50",
+              )}
+            >
+              <span className="text-sm leading-none">{b.glyph || "—"}</span>
+              <span className="text-[10px] text-muted-foreground">{b.label}</span>
             </button>
           ))}
         </div>
