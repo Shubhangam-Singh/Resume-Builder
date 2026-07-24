@@ -119,22 +119,35 @@
   }
 }
 
-/* Light sweeping across the progress bar */
-@keyframes rf-intro-sheen {
+/* Plain fade, for elements that shouldn't also translate */
+@keyframes rf-intro-fade {
   from {
-    transform: translateX(-120%);
+    opacity: 0;
   }
   to {
-    transform: translateX(320%);
+    opacity: 1;
   }
 }
 
-/* Motion-sensitive users get the same sequence without movement. */
+/* Light sweeping across the progress bar */
+@keyframes rf-intro-sheen {
+  from {
+    transform: translateX(-140%);
+  }
+  to {
+    transform: translateX(420%);
+  }
+}
+
+/* Motion-sensitive users lose the decorative motion (pop, rise, halo, sheen)
+   but KEEP the progress bar filling — that's load feedback, not decoration. */
 @media (prefers-reduced-motion: reduce) {
-  [data-rf-intro] *,
-  [data-rf-intro] {
-    animation-duration: 0.01ms !important;
-    animation-iteration-count: 1 !important;
-    transition-duration: 0.01ms !important;
+  [data-rf-intro] [data-rf-motion] {
+    animation: none !important;
+    opacity: 1 !important;
+    transform: none !important;
+  }
+  [data-rf-intro] [data-rf-decor] {
+    display: none !important;
   }
 }
