@@ -1,6 +1,9 @@
 "use client";
 
+import { useState } from "react";
+
 import { useResumeStore } from "@/lib/store";
+import { toast } from "@/lib/toast";
 import {
   AddButton,
   BulletEditor,
@@ -13,9 +16,13 @@ import {
 export function ProjectsSection() {
   const projects = useResumeStore((s) => s.resume.projects);
   const addEntry = useResumeStore((s) => s.addEntry);
+  const duplicateEntry = useResumeStore((s) => s.duplicateEntry);
   const updateEntry = useResumeStore((s) => s.updateEntry);
   const removeEntry = useResumeStore((s) => s.removeEntry);
   const moveEntry = useResumeStore((s) => s.moveEntry);
+  const undo = useResumeStore((s) => s.undo);
+
+  const [focusId, setFocusId] = useState<string | null>(null);
 
   return (
     <div className="space-y-4">
@@ -23,7 +30,12 @@ export function ProjectsSection() {
         <EntryCard
           key={p.id}
           title={p.name || "New project"}
-          onRemove={() => removeEntry("projects", p.id)}
+          autoFocus={p.id === focusId}
+          onRemove={() => {
+            removeEntry("projects", p.id);
+            toast("Project deleted", "info", { label: "Undo", onClick: undo });
+          }}
+          onDuplicate={() => setFocusId(duplicateEntry("projects", p.id))}
           onMoveUp={i > 0 ? () => moveEntry("projects", p.id, -1) : undefined}
           onMoveDown={
             i < projects.length - 1
@@ -67,7 +79,10 @@ export function ProjectsSection() {
           />
         </EntryCard>
       ))}
-      <AddButton label="Add project" onClick={() => addEntry("projects")} />
+      <AddButton
+        label="Add project"
+        onClick={() => setFocusId(addEntry("projects"))}
+      />
     </div>
   );
 }

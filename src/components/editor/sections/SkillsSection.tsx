@@ -1,9 +1,10 @@
 "use client";
 
-import { useId } from "react";
+import { useId, useState } from "react";
 
 import { Label } from "@/components/ui/label";
 import { useResumeStore } from "@/lib/store";
+import { toast } from "@/lib/toast";
 import { cn } from "@/lib/utils";
 import { AddButton, EntryCard, TagField, TextField } from "../fields";
 
@@ -41,9 +42,13 @@ function LevelSelect({
 export function SkillsSection() {
   const skills = useResumeStore((s) => s.resume.skills);
   const addEntry = useResumeStore((s) => s.addEntry);
+  const duplicateEntry = useResumeStore((s) => s.duplicateEntry);
   const updateEntry = useResumeStore((s) => s.updateEntry);
   const removeEntry = useResumeStore((s) => s.removeEntry);
   const moveEntry = useResumeStore((s) => s.moveEntry);
+  const undo = useResumeStore((s) => s.undo);
+
+  const [focusId, setFocusId] = useState<string | null>(null);
 
   return (
     <div className="space-y-4">
@@ -55,7 +60,13 @@ export function SkillsSection() {
         <EntryCard
           key={s.id}
           title={s.name || "New skill group"}
-          onRemove={() => removeEntry("skills", s.id)}
+          subtitle={s.keywords.length ? `${s.keywords.length} skills` : undefined}
+          autoFocus={s.id === focusId}
+          onRemove={() => {
+            removeEntry("skills", s.id);
+            toast("Skill group deleted", "info", { label: "Undo", onClick: undo });
+          }}
+          onDuplicate={() => setFocusId(duplicateEntry("skills", s.id))}
           onMoveUp={i > 0 ? () => moveEntry("skills", s.id, -1) : undefined}
           onMoveDown={
             i < skills.length - 1
@@ -84,7 +95,10 @@ export function SkillsSection() {
           />
         </EntryCard>
       ))}
-      <AddButton label="Add skill group" onClick={() => addEntry("skills")} />
+      <AddButton
+        label="Add skill group"
+        onClick={() => setFocusId(addEntry("skills"))}
+      />
     </div>
   );
 }

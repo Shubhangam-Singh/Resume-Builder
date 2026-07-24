@@ -1,6 +1,10 @@
 "use client";
 
+import { useState } from "react";
+
+import { formatDateRange } from "@/lib/resume/format";
 import { useResumeStore } from "@/lib/store";
+import { toast } from "@/lib/toast";
 import {
   AddButton,
   BulletEditor,
@@ -12,9 +16,14 @@ import {
 export function WorkSection() {
   const work = useResumeStore((s) => s.resume.work);
   const addEntry = useResumeStore((s) => s.addEntry);
+  const duplicateEntry = useResumeStore((s) => s.duplicateEntry);
   const updateEntry = useResumeStore((s) => s.updateEntry);
   const removeEntry = useResumeStore((s) => s.removeEntry);
   const moveEntry = useResumeStore((s) => s.moveEntry);
+  const undo = useResumeStore((s) => s.undo);
+
+  // Id of the entry just added/duplicated, so its card opens and takes focus.
+  const [focusId, setFocusId] = useState<string | null>(null);
 
   return (
     <div className="space-y-4">
@@ -24,7 +33,13 @@ export function WorkSection() {
           title={
             [w.position, w.name].filter(Boolean).join(" · ") || "New role"
           }
-          onRemove={() => removeEntry("work", w.id)}
+          subtitle={formatDateRange(w.startDate, w.endDate)}
+          autoFocus={w.id === focusId}
+          onRemove={() => {
+            removeEntry("work", w.id);
+            toast("Role deleted", "info", { label: "Undo", onClick: undo });
+          }}
+          onDuplicate={() => setFocusId(duplicateEntry("work", w.id))}
           onMoveUp={i > 0 ? () => moveEntry("work", w.id, -1) : undefined}
           onMoveDown={
             i < work.length - 1 ? () => moveEntry("work", w.id, 1) : undefined
@@ -84,7 +99,10 @@ export function WorkSection() {
           />
         </EntryCard>
       ))}
-      <AddButton label="Add experience" onClick={() => addEntry("work")} />
+      <AddButton
+        label="Add experience"
+        onClick={() => setFocusId(addEntry("work"))}
+      />
     </div>
   );
 }

@@ -9,6 +9,7 @@ import {
   FileText,
   FileType,
   History,
+  Keyboard,
   LayoutTemplate,
   Link2,
   Moon,
@@ -307,6 +308,17 @@ export function CommandPalette() {
         run: () => {
           close();
           openDialog("tailor");
+        },
+      },
+      {
+        id: "shortcuts",
+        group: "Tools",
+        label: "Keyboard shortcuts",
+        hint: "?",
+        icon: <Keyboard className="h-4 w-4" />,
+        run: () => {
+          close();
+          openDialog("shortcuts");
         },
       },
       {

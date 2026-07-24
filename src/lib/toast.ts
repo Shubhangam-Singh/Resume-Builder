@@ -8,15 +8,22 @@ import { create } from "zustand";
 
 export type ToastTone = "success" | "error" | "info";
 
+/** Optional inline action, e.g. undoing a delete. */
+export interface ToastAction {
+  label: string;
+  onClick: () => void;
+}
+
 export interface Toast {
   id: number;
   message: string;
   tone: ToastTone;
+  action?: ToastAction;
 }
 
 interface ToastStore {
   toasts: Toast[];
-  push: (message: string, tone: ToastTone) => void;
+  push: (message: string, tone: ToastTone, action?: ToastAction) => void;
   dismiss: (id: number) => void;
 }
 
@@ -25,9 +32,9 @@ let nextId = 1;
 
 export const useToastStore = create<ToastStore>((set) => ({
   toasts: [],
-  push: (message, tone) => {
+  push: (message, tone, action) => {
     const id = nextId++;
-    set((s) => ({ toasts: [...s.toasts, { id, message, tone }] }));
+    set((s) => ({ toasts: [...s.toasts, { id, message, tone, action }] }));
     setTimeout(() => {
       set((s) => ({ toasts: s.toasts.filter((t) => t.id !== id) }));
     }, AUTO_DISMISS_MS);
@@ -35,6 +42,10 @@ export const useToastStore = create<ToastStore>((set) => ({
   dismiss: (id) => set((s) => ({ toasts: s.toasts.filter((t) => t.id !== id) })),
 }));
 
-export function toast(message: string, tone: ToastTone = "info"): void {
-  useToastStore.getState().push(message, tone);
+export function toast(
+  message: string,
+  tone: ToastTone = "info",
+  action?: ToastAction,
+): void {
+  useToastStore.getState().push(message, tone, action);
 }

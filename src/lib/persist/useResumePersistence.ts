@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 
 import { uid } from "@/lib/resume/factory";
 import { useResumeStore } from "@/lib/store";
+import { useSaveState } from "./save-state";
 import {
   getActiveId,
   listDocs,
@@ -78,16 +79,19 @@ export function useResumePersistence(): boolean {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Debounced autosave of the active document (after hydration only).
+  // Debounced autosave of the active document (after hydration only). Save
+  // status is published to useSaveState so the header can show it.
   useEffect(() => {
     if (!hydrated || !documentId) return;
+    const { markSaving, markSaved, markError } = useSaveState.getState();
+    markSaving();
     const handle = setTimeout(() => {
       void saveDoc({
         id: documentId,
         name: documentName,
         updatedAt: Date.now(),
         data: resume,
-      });
+      }).then((ok) => (ok ? markSaved() : markError()));
     }, 600);
     return () => clearTimeout(handle);
   }, [resume, documentName, documentId, hydrated]);

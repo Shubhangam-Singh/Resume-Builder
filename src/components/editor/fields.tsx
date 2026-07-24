@@ -1,10 +1,12 @@
 "use client";
 
-import { useEffect, useId, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import {
   AlertTriangle,
   ChevronDown,
+  ChevronRight,
   ChevronUp,
+  Copy,
   GripVertical,
   Info,
   Plus,
@@ -421,25 +423,72 @@ export function BulletEditor({
 }
 
 /** Wrapper for a repeatable entry with move/remove controls. */
+/**
+ * A collapsible entry (a job, a degree, a project). Collapsing keeps long
+ * lists scannable; `autoFocus` is set on a freshly added entry so it scrolls
+ * into view and takes the cursor instead of landing off-screen.
+ */
 export function EntryCard({
   title,
+  subtitle,
   onRemove,
+  onDuplicate,
   onMoveUp,
   onMoveDown,
+  autoFocus = false,
   children,
 }: {
   title: string;
+  subtitle?: string;
   onRemove: () => void;
+  onDuplicate?: () => void;
   onMoveUp?: () => void;
   onMoveDown?: () => void;
+  autoFocus?: boolean;
   children: React.ReactNode;
 }) {
+  const [open, setOpen] = useState(true);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!autoFocus) return;
+    setOpen(true);
+    const el = ref.current;
+    if (!el) return;
+    el.scrollIntoView({ behavior: "smooth", block: "center" });
+    // Focus once the smooth scroll has settled, so the browser doesn't fight it.
+    const t = setTimeout(() => {
+      el.querySelector<HTMLInputElement>("input, textarea")?.focus({
+        preventScroll: true,
+      });
+    }, 260);
+    return () => clearTimeout(t);
+  }, [autoFocus]);
+
   return (
-    <div className="space-y-3 rounded-lg border bg-card p-4">
-      <div className="flex items-center justify-between gap-2">
-        <h4 className="truncate text-sm font-semibold text-muted-foreground">
-          {title}
-        </h4>
+    <div ref={ref} className="rounded-lg border bg-card">
+      <div className="flex items-center justify-between gap-2 px-3 py-2.5">
+        <button
+          type="button"
+          onClick={() => setOpen((v) => !v)}
+          aria-expanded={open}
+          className="flex min-w-0 flex-1 items-center gap-1.5 text-left"
+        >
+          <ChevronRight
+            className={cn(
+              "h-4 w-4 shrink-0 text-muted-foreground transition-transform",
+              open && "rotate-90",
+            )}
+          />
+          <span className="truncate text-sm font-semibold text-muted-foreground">
+            {title}
+          </span>
+          {subtitle ? (
+            <span className="hidden shrink-0 truncate text-xs text-muted-foreground/60 sm:inline">
+              {subtitle}
+            </span>
+          ) : null}
+        </button>
         <div className="flex shrink-0 items-center gap-0.5">
           <Button
             variant="ghost"
@@ -461,6 +510,18 @@ export function EntryCard({
           >
             <ChevronDown />
           </Button>
+          {onDuplicate ? (
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-7 w-7"
+              onClick={onDuplicate}
+              aria-label="Duplicate"
+              title="Duplicate"
+            >
+              <Copy />
+            </Button>
+          ) : null}
           <Button
             variant="ghost"
             size="icon"
@@ -472,7 +533,9 @@ export function EntryCard({
           </Button>
         </div>
       </div>
-      {children}
+      {open ? (
+        <div className="space-y-3 border-t px-4 pb-4 pt-3">{children}</div>
+      ) : null}
     </div>
   );
 }

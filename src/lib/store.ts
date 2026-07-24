@@ -11,6 +11,7 @@ import {
   emptySkill,
   emptyWork,
   sampleResume,
+  uid,
 } from "./resume/factory";
 import { customKey, resolveSectionOrder } from "./resume/sections";
 import { DENSITY_PRESETS } from "./resume/theme";
@@ -78,7 +79,10 @@ interface ResumeStore {
   removeProfile: (id: string) => void;
 
   // generic array-section CRUD
-  addEntry: (section: ArraySectionKey) => void;
+  /** Appends a blank entry and returns its id, so the UI can focus it. */
+  addEntry: (section: ArraySectionKey) => string;
+  /** Copies an entry in place (below the original) and returns the new id. */
+  duplicateEntry: (section: ArraySectionKey, id: string) => string;
   updateEntry: <K extends ArraySectionKey>(
     section: K,
     id: string,
@@ -226,10 +230,25 @@ export const useResumeStore = create<ResumeStore>((set) => {
         r.basics.profiles = r.basics.profiles.filter((x) => x.id !== id);
       }),
 
-    addEntry: (section) =>
+    addEntry: (section) => {
+      // Build the entry up front so its id can be returned to the caller.
+      const entry = emptyFactories[section]();
       mutate((r) => {
-        (r[section] as { id: string }[]).push(emptyFactories[section]());
-      }),
+        (r[section] as { id: string }[]).push(entry);
+      });
+      return entry.id;
+    },
+
+    duplicateEntry: (section, id) => {
+      const newId = uid();
+      mutate((r) => {
+        const list = r[section] as { id: string }[];
+        const i = list.findIndex((x) => x.id === id);
+        if (i < 0) return;
+        list.splice(i + 1, 0, { ...structuredClone(list[i]), id: newId });
+      });
+      return newId;
+    },
 
     updateEntry: (section, id, patch) =>
       mutate((r) => {

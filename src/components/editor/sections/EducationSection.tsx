@@ -1,6 +1,10 @@
 "use client";
 
+import { useState } from "react";
+
+import { formatDateRange } from "@/lib/resume/format";
 import { useResumeStore } from "@/lib/store";
+import { toast } from "@/lib/toast";
 import {
   AddButton,
   EntryCard,
@@ -12,9 +16,13 @@ import {
 export function EducationSection() {
   const education = useResumeStore((s) => s.resume.education);
   const addEntry = useResumeStore((s) => s.addEntry);
+  const duplicateEntry = useResumeStore((s) => s.duplicateEntry);
   const updateEntry = useResumeStore((s) => s.updateEntry);
   const removeEntry = useResumeStore((s) => s.removeEntry);
   const moveEntry = useResumeStore((s) => s.moveEntry);
+  const undo = useResumeStore((s) => s.undo);
+
+  const [focusId, setFocusId] = useState<string | null>(null);
 
   return (
     <div className="space-y-4">
@@ -25,7 +33,13 @@ export function EducationSection() {
             [e.studyType, e.institution].filter(Boolean).join(" · ") ||
             "New education"
           }
-          onRemove={() => removeEntry("education", e.id)}
+          subtitle={formatDateRange(e.startDate, e.endDate)}
+          autoFocus={e.id === focusId}
+          onRemove={() => {
+            removeEntry("education", e.id);
+            toast("Education deleted", "info", { label: "Undo", onClick: undo });
+          }}
+          onDuplicate={() => setFocusId(duplicateEntry("education", e.id))}
           onMoveUp={i > 0 ? () => moveEntry("education", e.id, -1) : undefined}
           onMoveDown={
             i < education.length - 1
@@ -83,7 +97,10 @@ export function EducationSection() {
           />
         </EntryCard>
       ))}
-      <AddButton label="Add education" onClick={() => addEntry("education")} />
+      <AddButton
+        label="Add education"
+        onClick={() => setFocusId(addEntry("education"))}
+      />
     </div>
   );
 }

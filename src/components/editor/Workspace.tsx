@@ -16,6 +16,7 @@ import { TemplateSwitcher } from "@/components/pdf/TemplateSwitcher";
 import { ImportResume } from "@/components/import/ImportResume";
 import { AtsChecker } from "@/components/ats/AtsChecker";
 import { CommandPalette } from "@/components/CommandPalette";
+import { ShortcutsDialog } from "@/components/ShortcutsDialog";
 import { Toaster } from "@/components/Toaster";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { cn } from "@/lib/utils";
@@ -26,6 +27,7 @@ import { Wizard, wizardIsDone, markWizardDone } from "@/components/onboarding/Wi
 import { clearShareParam, decodeResumeFromUrl } from "@/lib/share/url";
 import { useResumeStore } from "@/lib/store";
 import { useUiStore } from "@/lib/ui-store";
+import { SaveIndicator } from "./SaveIndicator";
 import { ScoreBadge } from "./ScoreDashboard";
 import { Editor } from "./Editor";
 import { MoreMenu } from "./MoreMenu";
@@ -142,6 +144,7 @@ export function Workspace() {
           </button>
           <UndoRedo />
           <ResumeManager />
+          <SaveIndicator />
           <ThemeToggle />
           <ImportResume />
           <AtsChecker />
@@ -231,8 +234,9 @@ export function Workspace() {
       {/* Guided wizard — auto-shown for first-time visitors */}
       <Wizard open={wizardOpen} onOpenChange={handleWizardClose} />
 
-      {/* Ctrl+K command palette */}
+      {/* Ctrl+K command palette, and the "?" shortcut reference */}
       <CommandPalette />
+      <ShortcutsDialog />
 
       {/* Toast notifications */}
       <Toaster />

@@ -73,13 +73,16 @@ export async function loadDoc(id: string): Promise<SavedDoc | null> {
   }
 }
 
-export async function saveDoc(doc: SavedDoc): Promise<void> {
+/** Returns true when the write actually landed, so callers can surface failures. */
+export async function saveDoc(doc: SavedDoc): Promise<boolean> {
   try {
     const db = await getDb();
-    if (!db) return;
+    if (!db) return false;
     await db.put(STORE, doc, docKey(doc.id));
+    return true;
   } catch {
     // best-effort; never block editing on a storage failure
+    return false;
   }
 }
 
