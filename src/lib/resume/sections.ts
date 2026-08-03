@@ -15,6 +15,27 @@ export const DEFAULT_SECTION_ORDER: HideableSection[] = [
   "certificates",
 ];
 
+/** Default heading text for the built-in sections (what the templates ship with). */
+export const SECTION_LABELS: Record<HideableSection, string> = {
+  summary: "Summary",
+  work: "Experience",
+  education: "Education",
+  projects: "Projects",
+  skills: "Skills",
+  certificates: "Certifications",
+};
+
+/**
+ * The heading a template renders for a built-in section: the user's override
+ * from `meta.sectionTitles` when set (and non-blank), else the default label.
+ */
+export function resolveSectionTitle(
+  meta: ResumeMeta,
+  key: HideableSection,
+): string {
+  return meta.sectionTitles?.[key]?.trim() || SECTION_LABELS[key];
+}
+
 /** The section key for a custom section, e.g. `custom:abc123`. */
 export function customKey(id: string): string {
   return `custom:${id}`;

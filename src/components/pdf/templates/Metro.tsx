@@ -14,7 +14,7 @@ import {
   formatLocation,
   formatMonthYear as fmtMonth,
 } from "@/lib/resume/format";
-import { customIdFromKey, resolveSectionOrder } from "@/lib/resume/sections";
+import { customIdFromKey, resolveSectionOrder, resolveSectionTitle } from "@/lib/resume/sections";
 import {
   makeScale,
   resolveAccent,
@@ -233,14 +233,14 @@ export function Metro({ data }: { data: ResumeData }) {
       case "summary":
         return has.summary ? (
           <View key="summary" style={styles.sectionCard} wrap={false}>
-            <SectionTitle styles={styles}>Summary</SectionTitle>
+            <SectionTitle styles={styles}>{resolveSectionTitle(data.meta, "summary")}</SectionTitle>
             <HighlightText text={basics.summary} highlights={data.meta.highlights} style={styles.summary} />
           </View>
         ) : null;
       case "work":
         return has.work ? (
           <View key="work" style={styles.sectionCard}>
-            <SectionTitle styles={styles}>Experience</SectionTitle>
+            <SectionTitle styles={styles}>{resolveSectionTitle(data.meta, "work")}</SectionTitle>
             {work.map((w, i) => {
               const dates = formatDateRange(w.startDate, w.endDate);
               return (
@@ -274,7 +274,7 @@ export function Metro({ data }: { data: ResumeData }) {
       case "education":
         return has.education ? (
           <View key="education" style={styles.sectionCard}>
-            <SectionTitle styles={styles}>Education</SectionTitle>
+            <SectionTitle styles={styles}>{resolveSectionTitle(data.meta, "education")}</SectionTitle>
             {education.map((e, i) => {
               const dates = formatDateRange(e.startDate, e.endDate);
               const degree = [e.studyType, e.area].filter(Boolean).join(", ");
@@ -306,7 +306,7 @@ export function Metro({ data }: { data: ResumeData }) {
       case "projects":
         return has.projects ? (
           <View key="projects" style={styles.sectionCard}>
-            <SectionTitle styles={styles}>Projects</SectionTitle>
+            <SectionTitle styles={styles}>{resolveSectionTitle(data.meta, "projects")}</SectionTitle>
             {projects.map((p, i) => (
               <View key={p.id} style={{ ...styles.entry, marginBottom: i === projects.length - 1 ? 0 : sc.sp(10) }} wrap={false}>
                 <View style={styles.entryHeaderRow}>
@@ -340,7 +340,7 @@ export function Metro({ data }: { data: ResumeData }) {
       case "skills":
         return has.skills ? (
           <View key="skills" style={styles.sectionCard} wrap={false}>
-            <SectionTitle styles={styles}>Skills</SectionTitle>
+            <SectionTitle styles={styles}>{resolveSectionTitle(data.meta, "skills")}</SectionTitle>
             <View style={styles.skillGrid}>
               {skills.map((s) => (
                 s.keywords.map((kw, i) => (
@@ -355,7 +355,7 @@ export function Metro({ data }: { data: ResumeData }) {
       case "certificates":
         return has.certificates ? (
           <View key="certificates" style={styles.sectionCard}>
-            <SectionTitle styles={styles}>Certifications</SectionTitle>
+            <SectionTitle styles={styles}>{resolveSectionTitle(data.meta, "certificates")}</SectionTitle>
             {certificates.map((c, i) => {
               const meta = [c.issuer, formatMonthYear(c.date)]
                 .filter(Boolean)

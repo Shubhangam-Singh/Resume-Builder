@@ -148,6 +148,8 @@ export interface ResumeMeta {
   secondaryColor?: string;
   /** Bullet marker style id (see theme.ts BULLET_STYLES). Absent = "disc" (•). */
   bulletStyle?: string;
+  /** Custom heading text per built-in section key (e.g. work → "Career"). Absent = default. */
+  sectionTitles?: Record<string, string>;
   /** Layout density preset. Absent = "standard". Quick-sets the spacing below. */
   density?: "compact" | "standard" | "loose";
   /** Font family id (see theme.ts FONTS). Absent = "helvetica". */

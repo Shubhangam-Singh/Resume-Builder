@@ -13,7 +13,7 @@ import {
   formatDateRange as fmtRange,
   formatMonthYear as fmtMonth,
 } from "@/lib/resume/format";
-import { customIdFromKey, resolveSectionOrder } from "@/lib/resume/sections";
+import { customIdFromKey, resolveSectionOrder, resolveSectionTitle } from "@/lib/resume/sections";
 import {
   makeScale,
   resolveAccent,
@@ -189,7 +189,7 @@ export function Designer({ data }: { data: ResumeData }) {
       case "skills":
         return has.skills ? (
           <View key="skills" style={styles.sideSection}>
-            <Text style={styles.sideTitle}>Skills</Text>
+            <Text style={styles.sideTitle}>{resolveSectionTitle(data.meta, "skills")}</Text>
             {skills.map((s) => (
               <View key={s.id} style={styles.sideItem}>
                 {s.name ? (
@@ -203,7 +203,7 @@ export function Designer({ data }: { data: ResumeData }) {
       case "education":
         return has.education ? (
           <View key="education" style={styles.sideSection}>
-            <Text style={styles.sideTitle}>Education</Text>
+            <Text style={styles.sideTitle}>{resolveSectionTitle(data.meta, "education")}</Text>
             {education.map((e) => (
               <View key={e.id} style={styles.sideItem}>
                 <Text style={styles.sideItemTitle}>{e.institution}</Text>
@@ -226,7 +226,7 @@ export function Designer({ data }: { data: ResumeData }) {
       case "certificates":
         return has.certificates ? (
           <View key="certificates" style={styles.sideSection}>
-            <Text style={styles.sideTitle}>Certifications</Text>
+            <Text style={styles.sideTitle}>{resolveSectionTitle(data.meta, "certificates")}</Text>
             {certificates.map((c) => (
               <View key={c.id} style={styles.sideItem}>
                 <Text style={styles.sideItemTitle}>{c.name}</Text>
@@ -244,14 +244,14 @@ export function Designer({ data }: { data: ResumeData }) {
       case "summary":
         return has.summary ? (
           <View key="summary" style={styles.mainSection}>
-            <Text style={styles.mainTitle}>Summary</Text>
+            <Text style={styles.mainTitle}>{resolveSectionTitle(data.meta, "summary")}</Text>
             <HighlightText text={basics.summary} highlights={data.meta.highlights} style={styles.summary} />
           </View>
         ) : null;
       case "work":
         return has.work ? (
           <View key="work" style={styles.mainSection}>
-            <Text style={styles.mainTitle}>Experience</Text>
+            <Text style={styles.mainTitle}>{resolveSectionTitle(data.meta, "work")}</Text>
             {work.map((w) => (
               <View key={w.id} style={styles.entry} wrap={false}>
                 <View style={styles.entryHeaderRow}>
@@ -284,7 +284,7 @@ export function Designer({ data }: { data: ResumeData }) {
       case "projects":
         return has.projects ? (
           <View key="projects" style={styles.mainSection}>
-            <Text style={styles.mainTitle}>Projects</Text>
+            <Text style={styles.mainTitle}>{resolveSectionTitle(data.meta, "projects")}</Text>
             {projects.map((p) => (
               <View key={p.id} style={styles.entry} wrap={false}>
                 <View style={styles.entryHeaderRow}>

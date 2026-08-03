@@ -13,7 +13,7 @@ import {
   formatDateRange as fmtRange,
   formatMonthYear as fmtMonth,
 } from "@/lib/resume/format";
-import { customIdFromKey, resolveSectionOrder } from "@/lib/resume/sections";
+import { customIdFromKey, resolveSectionOrder, resolveSectionTitle } from "@/lib/resume/sections";
 import { makeScale, resolveAccent, resolveSecondary, resolveBulletGlyph, resolveFont, type ResolvedFont, type Scale } from "@/lib/resume/theme";
 import { ensureFontRegistered } from "@/lib/resume/fonts";
 import type { HighlightRule, ResumeData, SectionKey } from "@/lib/resume/types";
@@ -141,13 +141,13 @@ export function Zenith({ data }: { data: ResumeData }) {
     switch (key) {
       case "summary":
         return has.summary ? (
-          <Row key="summary" title="Summary">
+          <Row key="summary" title={resolveSectionTitle(data.meta, "summary")}>
             <HighlightText text={basics.summary} highlights={data.meta.highlights} style={styles.summary} />
           </Row>
         ) : null;
       case "work":
         return has.work ? (
-          <Row key="work" title="Experience">
+          <Row key="work" title={resolveSectionTitle(data.meta, "work")}>
             {work.map((w) => (
               <View key={w.id} style={styles.entry} wrap={false}>
                 <View style={styles.entryHeaderRow}>
@@ -179,7 +179,7 @@ export function Zenith({ data }: { data: ResumeData }) {
         ) : null;
       case "education":
         return has.education ? (
-          <Row key="education" title="Education">
+          <Row key="education" title={resolveSectionTitle(data.meta, "education")}>
             {education.map((e) => (
               <View key={e.id} style={styles.entry} wrap={false}>
                 <View style={styles.entryHeaderRow}>
@@ -205,7 +205,7 @@ export function Zenith({ data }: { data: ResumeData }) {
         ) : null;
       case "projects":
         return has.projects ? (
-          <Row key="projects" title="Projects">
+          <Row key="projects" title={resolveSectionTitle(data.meta, "projects")}>
             {projects.map((p) => (
               <View key={p.id} style={styles.entry} wrap={false}>
                 <View style={styles.entryHeaderRow}>
@@ -236,7 +236,7 @@ export function Zenith({ data }: { data: ResumeData }) {
         ) : null;
       case "skills":
         return has.skills ? (
-          <Row key="skills" title="Skills">
+          <Row key="skills" title={resolveSectionTitle(data.meta, "skills")}>
             {skills.map((s) => (
               <View key={s.id} style={styles.skillRow}>
                 {s.name ? (
@@ -249,7 +249,7 @@ export function Zenith({ data }: { data: ResumeData }) {
         ) : null;
       case "certificates":
         return has.certificates ? (
-          <Row key="certificates" title="Certifications">
+          <Row key="certificates" title={resolveSectionTitle(data.meta, "certificates")}>
             {certificates.map((c) => (
               <View key={c.id} style={styles.entry} wrap={false}>
                 <View style={styles.entryHeaderRow}>

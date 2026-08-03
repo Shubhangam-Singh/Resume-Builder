@@ -14,7 +14,7 @@ import {
   formatLocation,
   formatMonthYear as fmtMonth,
 } from "@/lib/resume/format";
-import { customIdFromKey, resolveSectionOrder } from "@/lib/resume/sections";
+import { customIdFromKey, resolveSectionOrder, resolveSectionTitle } from "@/lib/resume/sections";
 import {
   makeScale,
   resolveAccent,
@@ -192,14 +192,14 @@ export function IvyLeague({ data }: { data: ResumeData }) {
       case "summary":
         return has.summary ? (
           <View key="summary" style={styles.section}>
-            <SectionTitle styles={styles}>Summary</SectionTitle>
+            <SectionTitle styles={styles}>{resolveSectionTitle(data.meta, "summary")}</SectionTitle>
             <HighlightText text={basics.summary} highlights={data.meta.highlights} style={styles.summary} />
           </View>
         ) : null;
       case "work":
         return has.work ? (
           <View key="work" style={styles.section}>
-            <SectionTitle styles={styles}>Experience</SectionTitle>
+            <SectionTitle styles={styles}>{resolveSectionTitle(data.meta, "work")}</SectionTitle>
             {work.map((w) => {
               const dates = formatDateRange(w.startDate, w.endDate);
               return (
@@ -233,7 +233,7 @@ export function IvyLeague({ data }: { data: ResumeData }) {
       case "education":
         return has.education ? (
           <View key="education" style={styles.section}>
-            <SectionTitle styles={styles}>Education</SectionTitle>
+            <SectionTitle styles={styles}>{resolveSectionTitle(data.meta, "education")}</SectionTitle>
             {education.map((e) => {
               const dates = formatDateRange(e.startDate, e.endDate);
               const degree = [e.studyType, e.area].filter(Boolean).join(", ");
@@ -265,7 +265,7 @@ export function IvyLeague({ data }: { data: ResumeData }) {
       case "projects":
         return has.projects ? (
           <View key="projects" style={styles.section}>
-            <SectionTitle styles={styles}>Projects</SectionTitle>
+            <SectionTitle styles={styles}>{resolveSectionTitle(data.meta, "projects")}</SectionTitle>
             {projects.map((p) => (
               <View key={p.id} style={styles.entry} wrap={false}>
                 <View style={styles.entryHeaderRow}>
@@ -299,7 +299,7 @@ export function IvyLeague({ data }: { data: ResumeData }) {
       case "skills":
         return has.skills ? (
           <View key="skills" style={styles.section}>
-            <SectionTitle styles={styles}>Skills</SectionTitle>
+            <SectionTitle styles={styles}>{resolveSectionTitle(data.meta, "skills")}</SectionTitle>
             {skills.map((s) => (
               <View key={s.id} style={styles.skillRow}>
                 {s.name ? (
@@ -313,7 +313,7 @@ export function IvyLeague({ data }: { data: ResumeData }) {
       case "certificates":
         return has.certificates ? (
           <View key="certificates" style={styles.section}>
-            <SectionTitle styles={styles}>Certifications</SectionTitle>
+            <SectionTitle styles={styles}>{resolveSectionTitle(data.meta, "certificates")}</SectionTitle>
             {certificates.map((c) => {
               const meta = [c.issuer, formatMonthYear(c.date)]
                 .filter(Boolean)

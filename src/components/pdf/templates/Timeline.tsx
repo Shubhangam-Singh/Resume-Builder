@@ -13,7 +13,7 @@ import {
   formatDateRange as fmtRange,
   formatMonthYear as fmtMonth,
 } from "@/lib/resume/format";
-import { customIdFromKey, resolveSectionOrder } from "@/lib/resume/sections";
+import { customIdFromKey, resolveSectionOrder, resolveSectionTitle } from "@/lib/resume/sections";
 import { makeScale, resolveAccent, resolveSecondary, resolveBulletGlyph, resolveFont, type ResolvedFont, type Scale } from "@/lib/resume/theme";
 import { ensureFontRegistered } from "@/lib/resume/fonts";
 import type { HighlightRule, ResumeData, SectionKey } from "@/lib/resume/types";
@@ -155,14 +155,14 @@ export function Timeline({ data }: { data: ResumeData }) {
       case "summary":
         return has.summary ? (
           <View key="summary" style={styles.section}>
-            <Text style={styles.sectionTitle}>Summary</Text>
+            <Text style={styles.sectionTitle}>{resolveSectionTitle(data.meta, "summary")}</Text>
             <HighlightText text={basics.summary} highlights={data.meta.highlights} style={styles.summary} />
           </View>
         ) : null;
       case "work":
         return has.work ? (
           <View key="work" style={styles.section}>
-            <Text style={styles.sectionTitle}>Experience</Text>
+            <Text style={styles.sectionTitle}>{resolveSectionTitle(data.meta, "work")}</Text>
             {work.map((w) => (
               <TimelineItem key={w.id} styles={styles}>
                 <View style={styles.entryHeaderRow}>
@@ -195,7 +195,7 @@ export function Timeline({ data }: { data: ResumeData }) {
       case "education":
         return has.education ? (
           <View key="education" style={styles.section}>
-            <Text style={styles.sectionTitle}>Education</Text>
+            <Text style={styles.sectionTitle}>{resolveSectionTitle(data.meta, "education")}</Text>
             {education.map((e) => (
               <TimelineItem key={e.id} styles={styles}>
                 <View style={styles.entryHeaderRow}>
@@ -222,7 +222,7 @@ export function Timeline({ data }: { data: ResumeData }) {
       case "projects":
         return has.projects ? (
           <View key="projects" style={styles.section}>
-            <Text style={styles.sectionTitle}>Projects</Text>
+            <Text style={styles.sectionTitle}>{resolveSectionTitle(data.meta, "projects")}</Text>
             {projects.map((p) => (
               <TimelineItem key={p.id} styles={styles}>
                 <View style={styles.entryHeaderRow}>
@@ -254,7 +254,7 @@ export function Timeline({ data }: { data: ResumeData }) {
       case "skills":
         return has.skills ? (
           <View key="skills" style={styles.section}>
-            <Text style={styles.sectionTitle}>Skills</Text>
+            <Text style={styles.sectionTitle}>{resolveSectionTitle(data.meta, "skills")}</Text>
             {skills.map((s) => (
               <View key={s.id} style={styles.skillRow}>
                 {s.name ? (
@@ -268,7 +268,7 @@ export function Timeline({ data }: { data: ResumeData }) {
       case "certificates":
         return has.certificates ? (
           <View key="certificates" style={styles.section}>
-            <Text style={styles.sectionTitle}>Certifications</Text>
+            <Text style={styles.sectionTitle}>{resolveSectionTitle(data.meta, "certificates")}</Text>
             {certificates.map((c) => (
               <View key={c.id} style={styles.entry} wrap={false}>
                 <View style={styles.entryHeaderRow}>

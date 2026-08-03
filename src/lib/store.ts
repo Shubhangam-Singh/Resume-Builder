@@ -112,6 +112,8 @@ interface ResumeStore {
   setThemePreset: (accent: string, secondary: string) => void;
   setPageSize: (size: "LETTER" | "A4") => void;
   setBulletStyle: (style: string) => void;
+  /** Rename a built-in section heading; empty title reverts to the default. */
+  setSectionTitle: (key: string, title: string) => void;
   setCoverLetter: (letter: { jobDescription: string; text: string } | undefined) => void;
   /** Add a keyword to skills (dedup, case-insensitive). Used by the tailor flow. */
   addSkillKeyword: (keyword: string) => void;
@@ -352,6 +354,16 @@ export const useResumeStore = create<ResumeStore>((set) => {
     setBulletStyle: (style) =>
       mutate((r) => {
         r.meta.bulletStyle = style;
+      }),
+
+    setSectionTitle: (key, title) =>
+      mutate((r) => {
+        const t = title.trim();
+        const titles = r.meta.sectionTitles ?? {};
+        if (t) titles[key] = t;
+        else delete titles[key];
+        if (Object.keys(titles).length) r.meta.sectionTitles = titles;
+        else delete r.meta.sectionTitles;
       }),
 
     setCoverLetter: (letter) =>

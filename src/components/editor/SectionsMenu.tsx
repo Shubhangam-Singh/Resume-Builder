@@ -12,25 +12,22 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { customIdFromKey, resolveSectionOrder } from "@/lib/resume/sections";
+import { Input } from "@/components/ui/input";
+import {
+  customIdFromKey,
+  resolveSectionOrder,
+  SECTION_LABELS,
+} from "@/lib/resume/sections";
 import type { HideableSection } from "@/lib/resume/types";
 import { cn } from "@/lib/utils";
 import { useResumeStore } from "@/lib/store";
-
-const LABELS: Record<HideableSection, string> = {
-  summary: "Summary",
-  work: "Experience",
-  education: "Education",
-  skills: "Skills",
-  projects: "Projects",
-  certificates: "Certifications",
-};
 
 export function SectionsMenu() {
   const meta = useResumeStore((s) => s.resume.meta);
   const customSections = useResumeStore((s) => s.resume.customSections);
   const toggleSection = useResumeStore((s) => s.toggleSection);
   const moveSection = useResumeStore((s) => s.moveSection);
+  const setSectionTitle = useResumeStore((s) => s.setSectionTitle);
   const [open, setOpen] = useState(false);
 
   const order = resolveSectionOrder(meta, customSections ?? []);
@@ -42,7 +39,7 @@ export function SectionsMenu() {
       const cs = (customSections ?? []).find((s) => s.id === id);
       return cs?.title?.trim() || "Custom section";
     }
-    return LABELS[key as HideableSection] ?? key;
+    return SECTION_LABELS[key as HideableSection] ?? key;
   };
 
   return (
@@ -58,14 +55,17 @@ export function SectionsMenu() {
         <DialogHeader>
           <DialogTitle>Sections</DialogTitle>
           <DialogDescription>
-            Reorder sections or hide them from the PDF. Basics (your name and
-            contact) always shows.
+            Rename, reorder, or hide sections. Basics (your name and contact)
+            always shows. Tip: ATS software looks for standard headings like
+            “Experience” — rename with care.
           </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-1.5">
           {order.map((key, i) => {
             const isHidden = hidden.has(key);
+            const isCustom = customIdFromKey(key) !== null;
+            const defaultLabel = SECTION_LABELS[key as HideableSection];
             return (
               <div
                 key={key}
@@ -84,14 +84,28 @@ export function SectionsMenu() {
                     <Eye className="h-4 w-4" />
                   )}
                 </Button>
-                <span
-                  className={cn(
-                    "flex-1 text-sm font-medium",
-                    isHidden && "text-muted-foreground line-through",
-                  )}
-                >
-                  {labelFor(key)}
-                </span>
+                {isCustom ? (
+                  // Custom sections are renamed in the Custom editor tab.
+                  <span
+                    className={cn(
+                      "flex-1 truncate px-2 text-sm font-medium",
+                      isHidden && "text-muted-foreground line-through",
+                    )}
+                  >
+                    {labelFor(key)}
+                  </span>
+                ) : (
+                  <Input
+                    value={meta.sectionTitles?.[key] ?? ""}
+                    placeholder={defaultLabel}
+                    onChange={(e) => setSectionTitle(key, e.target.value)}
+                    aria-label={`${defaultLabel} heading`}
+                    className={cn(
+                      "h-8 flex-1 border-transparent bg-transparent px-2 text-sm font-medium shadow-none hover:border-input focus-visible:border-input",
+                      isHidden && "text-muted-foreground line-through",
+                    )}
+                  />
+                )}
                 <Button
                   variant="ghost"
                   size="icon"

@@ -13,7 +13,7 @@ import {
   formatDateRange as fmtRange,
   formatMonthYear as fmtMonth,
 } from "@/lib/resume/format";
-import { customIdFromKey, resolveSectionOrder } from "@/lib/resume/sections";
+import { customIdFromKey, resolveSectionOrder, resolveSectionTitle } from "@/lib/resume/sections";
 import { makeScale, resolveAccent, resolveSecondary, resolveBulletGlyph, resolveFont, type ResolvedFont, type Scale } from "@/lib/resume/theme";
 import { ensureFontRegistered } from "@/lib/resume/fonts";
 import type { HighlightRule, ResumeData, SectionKey } from "@/lib/resume/types";
@@ -144,14 +144,14 @@ export function Executive({ data }: { data: ResumeData }) {
       case "summary":
         return has.summary ? (
           <View key="summary" style={styles.section}>
-            <SectionTitle styles={styles}>Summary</SectionTitle>
+            <SectionTitle styles={styles}>{resolveSectionTitle(data.meta, "summary")}</SectionTitle>
             <HighlightText text={basics.summary} highlights={data.meta.highlights} style={styles.summary} />
           </View>
         ) : null;
       case "work":
         return has.work ? (
           <View key="work" style={styles.section}>
-            <SectionTitle styles={styles}>Experience</SectionTitle>
+            <SectionTitle styles={styles}>{resolveSectionTitle(data.meta, "work")}</SectionTitle>
             {work.map((w) => (
               <View key={w.id} style={styles.entry} wrap={false}>
                 <View style={styles.entryHeaderRow}>
@@ -184,7 +184,7 @@ export function Executive({ data }: { data: ResumeData }) {
       case "education":
         return has.education ? (
           <View key="education" style={styles.section}>
-            <SectionTitle styles={styles}>Education</SectionTitle>
+            <SectionTitle styles={styles}>{resolveSectionTitle(data.meta, "education")}</SectionTitle>
             {education.map((e) => (
               <View key={e.id} style={styles.entry} wrap={false}>
                 <View style={styles.entryHeaderRow}>
@@ -211,7 +211,7 @@ export function Executive({ data }: { data: ResumeData }) {
       case "projects":
         return has.projects ? (
           <View key="projects" style={styles.section}>
-            <SectionTitle styles={styles}>Projects</SectionTitle>
+            <SectionTitle styles={styles}>{resolveSectionTitle(data.meta, "projects")}</SectionTitle>
             {projects.map((p) => (
               <View key={p.id} style={styles.entry} wrap={false}>
                 <View style={styles.entryHeaderRow}>
@@ -243,7 +243,7 @@ export function Executive({ data }: { data: ResumeData }) {
       case "skills":
         return has.skills ? (
           <View key="skills" style={styles.section}>
-            <SectionTitle styles={styles}>Skills</SectionTitle>
+            <SectionTitle styles={styles}>{resolveSectionTitle(data.meta, "skills")}</SectionTitle>
             {skills.map((s) => (
               <View key={s.id} style={styles.skillRow}>
                 {s.name ? (
@@ -257,7 +257,7 @@ export function Executive({ data }: { data: ResumeData }) {
       case "certificates":
         return has.certificates ? (
           <View key="certificates" style={styles.section}>
-            <SectionTitle styles={styles}>Certifications</SectionTitle>
+            <SectionTitle styles={styles}>{resolveSectionTitle(data.meta, "certificates")}</SectionTitle>
             {certificates.map((c) => (
               <View key={c.id} style={styles.entry} wrap={false}>
                 <View style={styles.entryHeaderRow}>

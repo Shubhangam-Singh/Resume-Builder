@@ -13,7 +13,7 @@ import {
   formatDateRange as fmtRange,
   formatMonthYear as fmtMonth,
 } from "@/lib/resume/format";
-import { customIdFromKey, resolveSectionOrder } from "@/lib/resume/sections";
+import { customIdFromKey, resolveSectionOrder, resolveSectionTitle } from "@/lib/resume/sections";
 import {
   makeScale,
   resolveAccent,
@@ -189,14 +189,14 @@ export function Banner({ data }: { data: ResumeData }) {
       case "summary":
         return has.summary ? (
           <View key="summary" style={styles.section}>
-            <Chip styles={styles}>Summary</Chip>
+            <Chip styles={styles}>{resolveSectionTitle(data.meta, "summary")}</Chip>
             <HighlightText text={basics.summary} highlights={data.meta.highlights} style={styles.summary} />
           </View>
         ) : null;
       case "work":
         return has.work ? (
           <View key="work" style={styles.section}>
-            <Chip styles={styles}>Experience</Chip>
+            <Chip styles={styles}>{resolveSectionTitle(data.meta, "work")}</Chip>
             {work.map((w) => (
               <View key={w.id} style={styles.entry} wrap={false}>
                 <View style={styles.entryHeaderRow}>
@@ -229,7 +229,7 @@ export function Banner({ data }: { data: ResumeData }) {
       case "education":
         return has.education ? (
           <View key="education" style={styles.section}>
-            <Chip styles={styles}>Education</Chip>
+            <Chip styles={styles}>{resolveSectionTitle(data.meta, "education")}</Chip>
             {education.map((e) => (
               <View key={e.id} style={styles.entry} wrap={false}>
                 <View style={styles.entryHeaderRow}>
@@ -256,7 +256,7 @@ export function Banner({ data }: { data: ResumeData }) {
       case "projects":
         return has.projects ? (
           <View key="projects" style={styles.section}>
-            <Chip styles={styles}>Projects</Chip>
+            <Chip styles={styles}>{resolveSectionTitle(data.meta, "projects")}</Chip>
             {projects.map((p) => (
               <View key={p.id} style={styles.entry} wrap={false}>
                 <View style={styles.entryHeaderRow}>
@@ -288,7 +288,7 @@ export function Banner({ data }: { data: ResumeData }) {
       case "skills":
         return has.skills ? (
           <View key="skills" style={styles.section}>
-            <Chip styles={styles}>Skills</Chip>
+            <Chip styles={styles}>{resolveSectionTitle(data.meta, "skills")}</Chip>
             {skills.map((s) => (
               <View key={s.id} style={styles.skillRow}>
                 {s.name ? (
@@ -302,7 +302,7 @@ export function Banner({ data }: { data: ResumeData }) {
       case "certificates":
         return has.certificates ? (
           <View key="certificates" style={styles.section}>
-            <Chip styles={styles}>Certifications</Chip>
+            <Chip styles={styles}>{resolveSectionTitle(data.meta, "certificates")}</Chip>
             {certificates.map((c) => (
               <View key={c.id} style={styles.entry} wrap={false}>
                 <View style={styles.entryHeaderRow}>
