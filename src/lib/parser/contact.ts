@@ -96,7 +96,41 @@ export function extractPhone(text: string): string {
   const collapsed = extractPhoneFromCollapsed(text);
   if (collapsed) return stripPhoneExtension(collapsed);
 
-  return stripPhoneExtension(extractPhoneSplitHalf(text));
+  const split = extractPhoneSplitHalf(text);
+  if (split) return stripPhoneExtension(split);
+
+  return extractPhoneInternational(text);
+}
+
+// Digits grouped by single spaces/dots/hyphens, optionally with "+CC" or a
+// bracketed area code: "07911 123456", "06 12 34 56 78", "+33 6 12 34 56 78".
+const GENERIC_PHONE =
+  /(?<![\w+/.-])(?:\+\d{1,3}[ .-]?)?(?:\(\d{1,5}\)[ .-]?)?\d(?:[ .-]?\d){7,14}(?![\w/-])/g;
+// Numbers that are identifiers, not phones.
+const ID_KEYWORD = /(?:roll|reg(?:istration)?|enrol(?:l)?ment|aadhaar|aadhar|pan|passport|account|a\/c|isbn|id)\W{0,4}$/i;
+
+/**
+ * Last resort for formats the patterns above don't know (UK, France, Germany,
+ * Australia…): a national number with its trunk "0" or an international one
+ * with "+", 9–15 digits (E.164), preferring one next to a phone label.
+ */
+function extractPhoneInternational(text: string): string {
+  GENERIC_PHONE.lastIndex = 0;
+  let best: { raw: string; score: number } | null = null;
+  let m: RegExpExecArray | null;
+  while ((m = GENERIC_PHONE.exec(text)) !== null) {
+    const raw = m[0].trim();
+    const digits = raw.replace(/\D/g, "");
+    if (digits.length < 9 || digits.length > 15) continue;
+    if (!raw.startsWith("+") && !digits.startsWith("0")) continue;
+    // "2019 2021 2023" — a run of years, not a number.
+    if (/^(?:(?:19|20)\d{2}[ .-]?)+$/.test(raw)) continue;
+    const prefix = text.slice(Math.max(0, m.index - 16), m.index);
+    if (ID_KEYWORD.test(prefix)) continue;
+    const score = PHONE_KEYWORD.test(prefix.slice(-12)) ? 10 : 0;
+    if (!best || score > best.score) best = { raw, score };
+  }
+  return best ? stripPhoneExtension(best.raw) : "";
 }
 
 function extractPhoneFromCollapsed(text: string): string {

@@ -3,6 +3,7 @@ import localFont from "next/font/local";
 import "./globals.css";
 import { Analytics } from "@vercel/analytics/next";
 import { ServiceWorkerRegistrar } from "@/components/pwa/ServiceWorkerRegistrar";
+import { AnimatedFavicon } from "@/components/AnimatedFavicon";
 
 
 const geistSans = localFont({
@@ -117,6 +118,17 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
+        {/* Development only: a service worker left over from a production run
+            on this origin serves stale, unhashed dev chunks ("reading 'call'"
+            crashes). Remove it and its caches before any chunk loads, then
+            reload once. Inline because the app's own JS may be the stale part. */}
+        {process.env.NODE_ENV !== "production" ? (
+          <script
+            dangerouslySetInnerHTML={{
+              __html: `(function(){try{if(!('serviceWorker' in navigator))return;navigator.serviceWorker.getRegistrations().then(function(rs){if(!rs.length)return;Promise.all(rs.map(function(r){return r.unregister()})).then(function(){return window.caches?caches.keys():[]}).then(function(ks){return Promise.all(ks.filter(function(k){return k.indexOf('resumeforge-')===0}).map(function(k){return caches.delete(k)}))}).then(function(){location.reload()})})}catch(e){}})();`,
+            }}
+          />
+        ) : null}
         {/* Prevent FOUC for theme preference */}
         <script
           dangerouslySetInnerHTML={{
@@ -240,6 +252,7 @@ export default function RootLayout({
         {children}
         <Analytics />
         <ServiceWorkerRegistrar />
+        <AnimatedFavicon />
       </body>
     </html>
   );

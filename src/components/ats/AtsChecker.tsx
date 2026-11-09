@@ -37,7 +37,6 @@ import {
 import { resumeToPlainText } from "@/lib/ats/resume-text";
 import { scoreResume, type ScoreResult } from "@/lib/ats/score";
 import { checkWriting, type WritingIssue } from "@/lib/writing/check";
-import { parseResumeText } from "@/lib/parser";
 import { cn } from "@/lib/utils";
 import { useResumeStore } from "@/lib/store";
 import { useUiStore } from "@/lib/ui-store";
@@ -78,10 +77,11 @@ export function AtsChecker() {
     setReport(null);
     try {
       // Dogfood: render the real PDF, read its text back, and re-parse it.
-      const [{ renderResumePdf }, { extractPdfTextFromData }] =
+      const [{ renderResumePdf }, { extractPdfTextFromData }, { parseResumeText }] =
         await Promise.all([
           import("@/lib/pdf/render"),
           import("@/lib/import/pdf"),
+          import("@/lib/parser"),
         ]);
       const blob = await renderResumePdf(resume);
       const text = await extractPdfTextFromData(

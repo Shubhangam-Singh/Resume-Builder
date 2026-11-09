@@ -292,6 +292,12 @@ export function Timeline({ data }: { data: ResumeData }) {
           : null;
         return cs ? (
           <CustomSectionView highlights={data.meta.highlights} bullet={bulletGlyph}
+            frame={(title, body) => (
+              <View style={styles.section}>
+                <Text style={styles.sectionTitle}>{title}</Text>
+                {body}
+              </View>
+            )}
             key={key}
             section={cs}
             accent={accent}

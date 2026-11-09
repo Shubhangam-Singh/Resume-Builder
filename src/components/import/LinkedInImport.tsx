@@ -15,7 +15,7 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { selectActiveKey, selectActiveModel, useAiStore } from "@/lib/ai/store";
 import { parseResumeJson } from "@/lib/persist/json";
-import { parseResumeText, type ParseResult } from "@/lib/parser";
+import type { ParseResult } from "@/lib/parser";
 import { useResumeStore } from "@/lib/store";
 
 /**
@@ -54,7 +54,7 @@ export function LinkedInImport({
     if (!next) reset();
   }
 
-  function parseLocal() {
+  async function parseLocal() {
     setError("");
     const trimmed = text.trim();
     if (!trimmed) return;
@@ -75,6 +75,7 @@ export function LinkedInImport({
             projects: data.projects.length,
             certificates: data.certificates.length,
             skills,
+            custom: data.customSections?.length ?? 0,
           },
           isEmpty: !data.basics.name && data.work.length === 0,
         });
@@ -83,6 +84,8 @@ export function LinkedInImport({
         // fall through to text parsing
       }
     }
+    // Lazy-loaded: the parser is only fetched when someone imports.
+    const { parseResumeText } = await import("@/lib/parser");
     setResult(parseResumeText(trimmed));
   }
 
@@ -142,7 +145,7 @@ export function LinkedInImport({
         />
 
         <div className="flex flex-wrap gap-2">
-          <Button variant="outline" onClick={parseLocal} disabled={!text.trim()}>
+          <Button variant="outline" onClick={() => void parseLocal()} disabled={!text.trim()}>
             Parse locally
           </Button>
           {apiKey ? (

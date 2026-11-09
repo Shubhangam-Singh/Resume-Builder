@@ -349,6 +349,12 @@ export function AtsClassic({ data }: { data: ResumeData }) {
           : null;
         return cs ? (
           <CustomSectionView highlights={data.meta.highlights} bullet={bulletGlyph}
+            frame={(title, body) => (
+              <View style={styles.section}>
+                <SectionTitle styles={styles}>{title}</SectionTitle>
+                {body}
+              </View>
+            )}
             key={key}
             section={cs}
             accent={accent}

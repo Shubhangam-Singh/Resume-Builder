@@ -23,7 +23,7 @@ import {
 import { cn } from "@/lib/utils";
 import { ACCEPT_ATTR, extractResume } from "@/lib/import/extract";
 import { selectActiveKey, selectActiveModel, useAiStore } from "@/lib/ai/store";
-import { parseResumeText, type ParseResult } from "@/lib/parser";
+import type { ParseResult } from "@/lib/parser";
 import { useResumeStore } from "@/lib/store";
 
 type Status = "idle" | "reading" | "review" | "error";
@@ -38,6 +38,7 @@ export function ImportResume() {
   const [fileName, setFileName] = useState("");
   const [result, setResult] = useState<ParseResult | null>(null);
   const [extractedText, setExtractedText] = useState("");
+  const [scanned, setScanned] = useState(false);
   const [error, setError] = useState("");
   const [dragging, setDragging] = useState(false);
   const [method, setMethod] = useState<"heuristic" | "ai">("heuristic");
@@ -50,6 +51,7 @@ export function ImportResume() {
     setFileName("");
     setResult(null);
     setExtractedText("");
+    setScanned(false);
     setError("");
     setDragging(false);
     setMethod("heuristic");
@@ -70,9 +72,14 @@ export function ImportResume() {
     setAiError("");
     setMethod("heuristic");
     try {
-      const { text, headingLines } = await extractResume(file);
+      // The parser is lazy-loaded like the extractors: only fetched on import.
+      const [{ text, headingLines, links, lineStyles, scanned }, { parseResumeText }] = await Promise.all([
+        extractResume(file),
+        import("@/lib/parser"),
+      ]);
       setExtractedText(text);
-      setResult(parseResumeText(text, { headingLines }));
+      setScanned(!!scanned);
+      setResult(parseResumeText(text, { headingLines, links, lineStyles }));
       setStatus("review");
     } catch (err) {
       setError(
@@ -108,10 +115,16 @@ export function ImportResume() {
     if (result) {
       // Import swaps in the résumé content but keeps the design the user has
       // chosen (template, accent, density, font, section order/visibility).
+      // The imported résumé's own section headings ("Internship Experience")
+      // replace any renamed headings from the résumé it replaces.
       const currentMeta = useResumeStore.getState().resume.meta;
       setResume({
         ...result.data,
-        meta: { ...currentMeta, lastModified: new Date().toISOString() },
+        meta: {
+          ...currentMeta,
+          sectionTitles: result.data.meta.sectionTitles,
+          lastModified: new Date().toISOString(),
+        },
       });
     }
     handleOpenChange(false);
@@ -164,7 +177,7 @@ export function ImportResume() {
         )}
 
         {status === "review" && result && (
-          <ReviewPanel result={result} onChooseAnother={reset} />
+          <ReviewPanel result={result} scanned={scanned} onChooseAnother={reset} />
         )}
 
         {status === "review" && (
@@ -284,23 +297,29 @@ function Dropzone({
 
 function ReviewPanel({
   result,
+  scanned,
   onChooseAnother,
 }: {
   result: ParseResult;
+  scanned: boolean;
   onChooseAnother: () => void;
 }) {
   const { data, found, isEmpty } = result;
+  const review = result.review ?? [];
 
-  if (isEmpty) {
+  if (isEmpty || scanned) {
     return (
       <div className="flex flex-col items-center gap-3 py-6 text-center">
         <AlertCircle className="h-8 w-8 text-amber-500" />
         <p className="text-sm font-medium">
-          We couldn&apos;t read much from this file.
+          {scanned
+            ? "This PDF is a scanned image — it has no text to read."
+            : "We couldn't read much from this file."}
         </p>
         <p className="text-xs text-muted-foreground">
-          It may be a scanned image or use an unusual layout. You can still
-          import an empty resume and fill it in, or try another file.
+          {scanned
+            ? "Export your résumé from Word or Google Docs as a PDF or DOCX (not a scan or photo) and import that instead, or start from an empty résumé."
+            : "It may use an unusual layout. You can still import an empty resume and fill it in, or try another file."}
         </p>
         <Button variant="outline" size="sm" onClick={onChooseAnother}>
           Try another file
@@ -341,10 +360,47 @@ function ReviewPanel({
           value={count(found.certificates, "item", "items")}
           ok={found.certificates > 0}
         />
+        <FoundRow
+          label="Other"
+          value={count(found.custom, "section", "sections")}
+          ok={found.custom > 0}
+        />
       </div>
+      {review.length > 0 && <ReviewNotes notes={review} />}
       <p className="text-xs text-muted-foreground">
         Importing replaces your current resume content.
       </p>
+    </div>
+  );
+}
+
+const MAX_NOTES = 5;
+
+/** The fields the parser is least sure about, so the user checks those first. */
+function ReviewNotes({ notes }: { notes: NonNullable<ParseResult["review"]> }) {
+  const shown = notes.slice(0, MAX_NOTES);
+  const more = notes.length - shown.length;
+  return (
+    <div
+      role="status"
+      className="rounded-md border border-amber-500/30 bg-amber-500/10 p-3 text-xs"
+    >
+      <p className="mb-1.5 flex items-center gap-1.5 font-medium text-amber-700 dark:text-amber-400">
+        <AlertCircle className="h-3.5 w-3.5 shrink-0" />
+        Worth a quick check after importing
+      </p>
+      <ul className="space-y-1 pl-5 text-muted-foreground">
+        {shown.map((n, i) => (
+          <li key={i} className="list-disc">
+            {n.message}
+          </li>
+        ))}
+      </ul>
+      {more > 0 && (
+        <p className="mt-1 pl-5 text-muted-foreground">
+          …and {more} more.
+        </p>
+      )}
     </div>
   );
 }

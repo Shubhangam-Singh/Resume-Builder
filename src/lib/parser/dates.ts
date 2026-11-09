@@ -55,12 +55,12 @@ export function parseMonthYear(input: string): string {
   );
   if (m && MONTHS[m[1]] !== undefined) return `${m[2]}-${pad(MONTHS[m[1]])}`;
 
-  // Month/season name + 4-digit year: "mar 2021", "march, 2021", "summer 2021"
-  m = s.match(new RegExp(`\\b(${MONTH_NAMES}|${SEASONS})\\.?\\s*,?\\s*(${YEAR})`));
+  // Month/season name + 4-digit year: "mar 2021", "march, 2021", "mar-2021"
+  m = s.match(new RegExp(`\\b(${MONTH_NAMES}|${SEASONS})\\.?[\\s,\\-/]*(${YEAR})`));
   if (m && MONTHS[m[1]] !== undefined) return `${m[2]}-${pad(MONTHS[m[1]])}`;
 
-  // Month name + apostrophe year: "Jan '20", "Sept ’19"
-  m = s.match(new RegExp(`\\b(${MONTH_NAMES})\\.?\\s*,?\\s*'(\\d{2})\\b`));
+  // Month name + two-digit year: "Jan '20", "Sept ’19", "Jan-21", "Jun/21"
+  m = s.match(new RegExp(`\\b(${MONTH_NAMES})\\.?(?:\\s*,?\\s*'|[\\-/]\\s?'?)(\\d{2})(?!\\d)`));
   if (m && MONTHS[m[1]] !== undefined) {
     return `${expandYY(parseInt(m[2], 10))}-${pad(MONTHS[m[1]])}`;
   }
@@ -96,26 +96,31 @@ export function parseMonthYear(input: string): string {
   return "";
 }
 
+// Month names must start a word: "Gram-mar 2019" / "Ku-mar 2019" are not March.
+const MONTH_START = `(?<![a-z])(?:${MONTH_NAMES})`;
+
 // A single date token, ordered longest/most-specific first so alternation
 // doesn't stop at a partial match ("Jan 12, 2020" before "Jan 2020"…).
 const DATE_TOKEN =
   `(?:` +
   `\\d{1,2}(?:st|nd|rd|th)?\\s+(?:${MONTH_NAMES})\\.?,?\\s*${YEAR}` + // 12 Jan 2020
-  `|(?:${MONTH_NAMES})\\.?\\s+\\d{1,2}(?:st|nd|rd|th)?,?\\s+${YEAR}` + // Jan 12, 2020
+  `|${MONTH_START}\\.?\\s+\\d{1,2}(?:st|nd|rd|th)?,?\\s+${YEAR}` + // Jan 12, 2020
   `|\\d{1,2}[/.\\-]\\d{1,2}[/.\\-]${YEAR}` + // 12/01/2020
-  `|(?:${MONTH_NAMES})\\.?\\s*,?\\s*(?:${YEAR}|'\\d{2})` + // Jan 2020 / Jan '20
-  `|(?:${SEASONS})\\s+${YEAR}` + // Summer 2021
+  `|${MONTH_START}\\.?(?:[\\s,\\-/]*${YEAR}|\\s*,?\\s*'\\d{2}|[\\-/]\\s?'?\\d{2})(?!\\d)` + // Jan 2020 / Mar-2021 / Jan '20 / Jan-21
+  `|(?<![a-z])(?:${SEASONS})\\s+${YEAR}` + // Summer 2021
   `|\\d{1,2}[/.\\-]${YEAR}` + // 03/2021
-  `|${YEAR}[/.\\-]\\d{1,2}` + // 2021-03
+  `|${YEAR}[/.\\-]\\d{1,2}(?!\\d)` + // 2021-03
   `|${YEAR}` + // 2021
   `)`;
 
 const PRESENT =
-  "present|current(?:ly)?|now|ongoing|today|till\\s*date|to\\s*date|till\\s*now|presently";
-const RANGE_SEP = "(?:-|–|—|to|until|till|through|thru)";
+  "present|current(?:ly)?|now|ongoing|today|till\\s*date|to\\s*date|till\\s*now|presently|date|pursuing|continuing";
+const RANGE_SEP = "(?:-{1,2}|–|—|~|to|until|till|through|thru)";
+// "2021 – Expected 2025": an anticipated end date.
+const EXPECTED = "(?:(?:expected|anticipated|exp\\.)\\s*)?";
 
 const RANGE_REGEX = new RegExp(
-  `(${DATE_TOKEN})\\s*${RANGE_SEP}\\s*(${DATE_TOKEN}|${PRESENT})`,
+  `(${DATE_TOKEN})\\s*${RANGE_SEP}\\s*${EXPECTED}(${DATE_TOKEN}|${PRESENT})(?![a-z])`,
   "i",
 );
 // "Jan – Mar 2021": both months inherit the single year.
@@ -183,10 +188,15 @@ export function extractDateRange(line: string): DateRange | null {
   return null;
 }
 
+/** The first single date's exact text in a line ("Oct 2021"), for stripping. */
+export function matchSingleDate(line: string): string {
+  return line.match(SINGLE_DATE_REGEX)?.[0] ?? "";
+}
+
 /** Extract the first single date in a line (e.g. a graduation or cert date). */
 export function extractSingleDate(line: string): string {
-  const m = line.match(SINGLE_DATE_REGEX);
-  return m ? parseMonthYear(m[0]) : "";
+  const m = matchSingleDate(line);
+  return m ? parseMonthYear(m) : "";
 }
 
 export function lineHasDateRange(line: string): boolean {

@@ -4,7 +4,11 @@
  * contact line, and a single-word name header. Stop/role words and honorifics
  * keep titles and form labels from being mistaken for a name.
  */
-import type { Sections } from "./sections";
+import { ROLE_WORD_SET, isLocationLine } from "./lexicon";
+import type { ParseHints, Sections } from "./sections";
+import { isKnownSkill } from "./skills";
+
+export { ROLE_WORD_SET };
 
 function escapeRegExp(s: string): string {
   return s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
@@ -22,26 +26,13 @@ const NAME_STOP_WORDS = [
   "form", "application", "ref", "code", "sr", "sl",
 ];
 
-const ROLE_WORDS = [
-  "developer", "engineer", "designer", "manager", "consultant", "analyst",
-  "architect", "intern", "specialist", "administrator", "programmer",
-  "scientist", "executive", "associate", "freelancer", "enthusiast",
-  "professional", "student", "graduate", "fresher", "lead", "officer",
-  "coordinator", "strategist", "technologist", "evangelist", "practitioner",
-  "director", "founder", "ceo", "cto", "cfo", "president", "head", "trainee",
-  "apprentice", "recruiter", "tester", "qa",
-];
-
-/** Exported for job-title detection in entry parsing. */
-export const ROLE_WORD_SET = new Set(ROLE_WORDS);
-
 const HONORIFIC =
   /^(?:mr|mrs|ms|miss|dr|prof|er|ca|sri|shri|smt|md|capt|lt|col)\.?\s+/i;
 
 const STOP_WORD_REGEXES = NAME_STOP_WORDS.map(
   (w) => new RegExp(`\\b${escapeRegExp(w)}\\b`),
 );
-const ROLE_WORD_REGEXES = ROLE_WORDS.map(
+const ROLE_WORD_REGEXES = [...ROLE_WORD_SET].map(
   (w) => new RegExp(`\\b${escapeRegExp(w)}\\b`),
 );
 
@@ -72,6 +63,8 @@ export function looksLikeName(candidate: string, allowSingleWord = false): boole
   if (words.length === 1 && words[0].replace(/\.$/, "").length < 3) return false;
   // Reject a leading first-person "I" (prose bleeding into the header).
   if (words.length >= 2 && words[0] === "I") return false;
+  // A skill phrase ("Machine Learning") from a sidebar is not a name.
+  if (isKnownSkill(candidate)) return false;
 
   return true;
 }
@@ -88,7 +81,18 @@ const CREDENTIAL_TAIL =
 const DEGREE_TOKEN =
   /^(phd|mba|msc|bsc|btech|mtech|be|me|ms|ba|bca|mca|pmp|cfa|cpa|md|mphil)$/i;
 
-export function extractName(text: string, sections: Sections): string {
+export function extractName(
+  text: string,
+  sections: Sections,
+  hints?: ParseHints,
+): string {
+  // Pass 0 — the largest-font lines, when the extractor reports font sizes.
+  // Designed layouts put the name anywhere; it is almost always the biggest.
+  for (const hint of (hints?.headingLines ?? []).slice(0, 3)) {
+    const candidate = hint.trim().replace(HONORIFIC, "");
+    if (looksLikeName(candidate)) return cleanName(candidate);
+  }
+
   const header =
     sections.header && sections.header.trim().length > 0 ? sections.header : text;
   const lines = header
@@ -102,6 +106,7 @@ export function extractName(text: string, sections: Sections): string {
     if (/[@|]|\d|https?:\/\//i.test(line)) continue;
     if (line.trimEnd().endsWith(":")) continue;
     if (/^\w{1,6}\.\s+\w{1,6}\.?$/.test(line)) continue;
+    if (isLocationLine(line)) continue;
 
     const candidate = line.replace(HONORIFIC, "");
 

@@ -326,6 +326,12 @@ export function Banner({ data }: { data: ResumeData }) {
           : null;
         return cs ? (
           <CustomSectionView highlights={data.meta.highlights} bullet={bulletGlyph}
+            frame={(title, body) => (
+              <View style={styles.section}>
+                <Chip styles={styles}>{title}</Chip>
+                {body}
+              </View>
+            )}
             key={key}
             section={cs}
             accent={accent}

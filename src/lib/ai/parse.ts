@@ -77,6 +77,7 @@ export async function parseResumeWithAi(
     projects: data.projects.length,
     certificates: data.certificates.length,
     skills,
+    custom: data.customSections?.length ?? 0,
   };
   const isEmpty =
     !found.name &&

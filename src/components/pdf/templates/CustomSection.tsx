@@ -10,7 +10,15 @@ import { HighlightText } from "../HighlightText";
  * styles from the resume's accent / scale / font so it blends into any template
  * (single- or multi-column) without depending on each template's style object.
  * Returns null when the section has nothing worth showing.
+ *
+ * Templates pass a `frame` — their own section wrapper and heading — so a
+ * custom section's title looks exactly like the template's other headings
+ * (Banner's chips, Zenith's margin labels, Metro's cards…). Without one, the
+ * built-in title style below is used.
  */
+
+/** A template's section frame: its wrapper and heading around the items. */
+export type SectionFrame = (title: string, body: React.ReactNode) => React.ReactNode;
 
 const TEXT = "#1a1a1a";
 const MUTED = "#444444";
@@ -59,6 +67,7 @@ export function CustomSectionView({
   dateFormat,
   highlights,
   bullet = "•",
+  frame,
 }: {
   section: CustomSection;
   accent: string;
@@ -67,6 +76,7 @@ export function CustomSectionView({
   dateFormat?: DateFormat;
   highlights?: HighlightRule[];
   bullet?: string;
+  frame?: SectionFrame;
 }) {
   const items = section.items.filter(
     (it) => it.name || it.description || it.highlights.length || it.date,
@@ -74,10 +84,10 @@ export function CustomSectionView({
   if (!section.title.trim() && items.length === 0) return null;
 
   const styles = makeStyles(accent, sc, font);
+  const title = section.title || "Section";
 
-  return (
-    <View key={`custom:${section.id}`} style={styles.section}>
-      <Text style={styles.title}>{section.title || "Section"}</Text>
+  const body = (
+    <>
       {items.map((it) => {
         const date = formatMonthYear(it.date, dateFormat);
         return (
@@ -108,6 +118,14 @@ export function CustomSectionView({
           </View>
         );
       })}
+    </>
+  );
+
+  if (frame) return <>{frame(title, body)}</>;
+  return (
+    <View key={`custom:${section.id}`} style={styles.section}>
+      <Text style={styles.title}>{title}</Text>
+      {body}
     </View>
   );
 }

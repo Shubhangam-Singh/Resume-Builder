@@ -289,33 +289,118 @@ export function normalizeSkillToken(token: string): string {
 }
 
 /**
+ * A skill as the user wrote it — "React.js", "ASP.NET Core" and "pandas" stay
+ * exactly so. Only an all-lowercase spelling of a name with inner capitals
+ * gets them back ("javascript" → "JavaScript", "mysql" → "MySQL"); a plain
+ * lowercase word is left alone. Use `normalizeSkillToken` to compare skills.
+ */
+export function tidySkill(token: string): string {
+  const trimmed = token.trim();
+  if (trimmed !== trimmed.toLowerCase()) return trimmed;
+  const canonical = TOKEN_TO_CANONICAL.get(trimmed);
+  if (!canonical || canonical.toLowerCase() !== trimmed) return trimmed;
+  return /\p{Lu}/u.test(canonical.slice(1)) ? canonical : trimmed;
+}
+
+/** Split on separators that sit outside brackets: "AWS (EC2, S3), Docker". */
+export function splitOutsideBrackets(s: string, separators: RegExp): string[] {
+  const out: string[] = [];
+  let depth = 0;
+  let cur = "";
+  for (const ch of s) {
+    if (ch === "(" || ch === "[") depth++;
+    else if ((ch === ")" || ch === "]") && depth > 0) depth--;
+    if (depth === 0 && separators.test(ch)) {
+      out.push(cur);
+      cur = "";
+    } else {
+      cur += ch;
+    }
+  }
+  out.push(cur);
+  return out;
+}
+
+/** True when the whole phrase is a skill in the taxonomy ("Machine Learning"). */
+export function isKnownSkill(phrase: string): boolean {
+  return TOKEN_TO_CANONICAL.has(phrase.trim().toLowerCase());
+}
+
+/**
+ * Split a line into "Category: values" segments. Handles explicit separators
+ * ("Languages: Go | Tools: Docker") and chip layouts that repeat a category
+ * label without one ("Languages: Go Languages: Rust"), using the category
+ * labels that open lines elsewhere in the section.
+ */
+function splitCategorySegments(line: string, labels: string[]): string[] {
+  let parts = line.split(/\s+\|\s+/);
+  if (labels.length) {
+    const re = new RegExp(`\\s+(?=(?:${labels.map(escapeRegExp).join("|")}):\\s)`);
+    parts = parts.flatMap((p) => p.split(re));
+  }
+  return parts.map((p) => p.trim()).filter(Boolean);
+}
+
+/**
  * Parse the raw Skills section into categories — PRESERVING EVERY skill the user
  * wrote. "Languages: Python, Java" becomes a category; bare comma lists become
  * an uncategorized group. Tokens are normalized for casing but never dropped.
  */
+/**
+ * Sidebar layouts print the category on its own line above its list:
+ * "Research" / "User interviews, Usability testing". Join each such label to
+ * its list (and to a list that wraps after a trailing comma).
+ */
+function joinCategoryLabels(lines: string[]): string[] {
+  const labelShaped = (l: string) =>
+    !/[,:|•·;]/.test(l) && l.split(/\s+/).length <= 4 && /^\p{Lu}/u.test(l) && !isKnownSkill(l);
+  // A label is a label only when a list follows it.
+  const isLabelAt = (j: number) => !!lines[j] && labelShaped(lines[j]) && !!lines[j + 1]?.includes(",");
+  const out: string[] = [];
+  for (let i = 0; i < lines.length; i++) {
+    let line = lines[i];
+    if (isLabelAt(i)) {
+      line = `${line}: ${lines[++i]}`;
+      // The list may wrap in a narrow sidebar, even mid-item ("Hugging" /
+      // "Face, MLflow"); it runs until the next label or "Category:" line.
+      while (lines[i + 1] && !isLabelAt(i + 1) && !lines[i + 1].includes(":")) {
+        const nextLine = lines[++i];
+        // "AWS Sage-" / "Maker": a capitalised product name split by hyphenation.
+        line = /[a-z]-$/.test(line) && /^\p{Lu}/u.test(nextLine)
+          ? `${line.slice(0, -1)}${nextLine}`
+          : `${line} ${nextLine}`;
+      }
+    }
+    out.push(line);
+  }
+  return out;
+}
+
 export function parseSkillsSection(sectionText: string): SkillEntry[] {
-  const lines = sectionText
-    .split("\n")
-    .map((l) => l.replace(/^[•\-*+>]+\s*/, "").trim())
-    .filter((l) => l.length > 0);
+  const lines = joinCategoryLabels(
+    sectionText
+      .split("\n")
+      .map((l) => l.replace(/^[•\-*+>]+\s*/, "").trim())
+      .filter((l) => l.length > 0),
+  );
 
   const entries: SkillEntry[] = [];
   const general: string[] = [];
 
   const splitTokens = (s: string) =>
-    s
-      // " / " with spaces separates items; "CI/CD", "TCP/IP" stay intact.
-      .replace(/\s\/\s/g, ",")
-      .split(/[,;|•·]+/)
+    // " / " with spaces separates items; "CI/CD", "TCP/IP" stay intact, and
+    // so do lists inside brackets: "AWS (EC2, S3)".
+    splitOutsideBrackets(s.replace(/\s\/\s/g, ","), /[,;|•·]/)
       .map((t) => t.trim().replace(/\.$/, ""))
       .filter((t) => t.length > 0 && t.length <= 60)
-      .map(normalizeSkillToken);
+      .map(tidySkill);
 
+  // Duplicates are judged by canonical name: "React" and "React.js" are one.
   const dedupe = (arr: string[]) => {
     const seen = new Set<string>();
     const out: string[] = [];
     for (const v of arr) {
-      const k = v.toLowerCase();
+      const k = normalizeSkillToken(v).toLowerCase();
       if (!seen.has(k)) {
         seen.add(k);
         out.push(v);
@@ -324,19 +409,37 @@ export function parseSkillsSection(sectionText: string): SkillEntry[] {
     return out;
   };
 
+  // Category labels that open a line ("Languages:", "Tools & Platforms:").
+  const labels = [
+    ...new Set(
+      lines
+        .map((l) => l.match(/^([^:,|]{1,40}):\s/)?.[1].trim())
+        .filter((l): l is string => !!l),
+    ),
+  ];
+
+  const byName = new Map<string, SkillEntry>();
   for (const line of lines) {
-    const colon = line.indexOf(":");
-    // "Category: a, b, c" — label must be short and comma-free.
-    if (colon > 0 && colon <= 40 && !line.slice(0, colon).includes(",")) {
-      const name = line.slice(0, colon).trim();
-      const keywords = dedupe(splitTokens(line.slice(colon + 1)));
-      if (keywords.length > 0) {
-        entries.push({ id: uid(), name, keywords });
-        continue;
+    for (const segment of splitCategorySegments(line, labels)) {
+      const colon = segment.indexOf(":");
+      // "Category: a, b, c" — label must be short and comma-free.
+      if (colon > 0 && colon <= 40 && !segment.slice(0, colon).includes(",")) {
+        const name = segment.slice(0, colon).trim();
+        const keywords = splitTokens(segment.slice(colon + 1));
+        if (keywords.length > 0) {
+          const existing = byName.get(name.toLowerCase());
+          if (existing) existing.keywords = dedupe([...existing.keywords, ...keywords]);
+          else {
+            const entry = { id: uid(), name, keywords: dedupe(keywords) };
+            byName.set(name.toLowerCase(), entry);
+            entries.push(entry);
+          }
+          continue;
+        }
       }
+      // Otherwise accumulate as uncategorized keywords.
+      general.push(...splitTokens(segment));
     }
-    // Otherwise accumulate as uncategorized keywords.
-    general.push(...splitTokens(line));
   }
 
   if (general.length > 0) {

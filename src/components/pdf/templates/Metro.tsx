@@ -379,15 +379,20 @@ export function Metro({ data }: { data: ResumeData }) {
           ? (data.customSections ?? []).find((s) => s.id === id)
           : null;
         return cs ? (
-          <View key={key} style={styles.sectionCard}>
-            <CustomSectionView highlights={data.meta.highlights} bullet={bulletGlyph}
-              section={cs}
-              accent={accent}
-              sc={sc}
-              font={font}
-              dateFormat={dateFormat}
-            />
-          </View>
+          <CustomSectionView highlights={data.meta.highlights} bullet={bulletGlyph}
+            frame={(title, body) => (
+              <View style={styles.sectionCard}>
+                <SectionTitle styles={styles}>{title}</SectionTitle>
+                {body}
+              </View>
+            )}
+            key={key}
+            section={cs}
+            accent={accent}
+            sc={sc}
+            font={font}
+            dateFormat={dateFormat}
+          />
         ) : null;
       }
     }

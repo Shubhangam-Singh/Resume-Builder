@@ -73,8 +73,14 @@ function validateFile(file: File): void {
 
 export interface ExtractedResume {
   text: string;
-  /** Large-font lines from the PDF — parser hints for section headers. */
+  /** Large-font lines (PDF) or Word headings — parser hints for section headers. */
   headingLines?: string[];
+  /** Link targets (Word hyperlinks) — profile / website hints. */
+  links?: string[];
+  /** Size and weight of short lines — lets the parser learn the heading style. */
+  lineStyles?: { text: string; size: number; bold: boolean }[];
+  /** A PDF whose pages have no text layer (a scan or a picture of a résumé). */
+  scanned?: boolean;
 }
 
 export async function extractResume(file: File): Promise<ExtractedResume> {
@@ -87,8 +93,8 @@ export async function extractResume(file: File): Promise<ExtractedResume> {
     return extractPdfDocument(file);
   }
   if (kind === "docx") {
-    const { extractDocxText } = await import("./docx");
-    return { text: await extractDocxText(file) };
+    const { extractDocxDocument } = await import("./docx");
+    return extractDocxDocument(await file.arrayBuffer());
   }
   // kind === "txt"
   return { text: await file.text() };

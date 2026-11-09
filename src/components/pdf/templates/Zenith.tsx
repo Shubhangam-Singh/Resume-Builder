@@ -273,6 +273,7 @@ export function Zenith({ data }: { data: ResumeData }) {
           : null;
         return cs ? (
           <CustomSectionView highlights={data.meta.highlights} bullet={bulletGlyph}
+            frame={(title, body) => <Row title={title}>{body}</Row>}
             key={key}
             section={cs}
             accent={accent}
